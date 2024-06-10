@@ -1,7 +1,7 @@
 #include "../../include/packet/packet_manage.h"
 #include "../../include/packet/packets.h"
 #include "../../include/global_settings/common.h"
-#define BUFFER_SIZE 65535
+#define BUFFER_SIZE 4096
 
 char buffer[BUFFER_SIZE];
 
@@ -14,6 +14,7 @@ void create_recv_thread(Interface *interface) {
 }
 
 void recv_thread_runner(Interface *interface) {
+    static int count = 1;
     int socket_fd;
     // 创建原始套接字
     if ((socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP))) < 0) {
@@ -36,6 +37,7 @@ void recv_thread_runner(Interface *interface) {
         struct iphdr *ipv4_header;
         
         // 接收报文
+        memset(buffer, 0, BUFFER_SIZE);
         ssize_t packet_len = recv(socket_fd, buffer, BUFFER_SIZE, 0);
         if (packet_len < 0) {
             perror("Failed to receive packets");
@@ -44,13 +46,13 @@ void recv_thread_runner(Interface *interface) {
         }
 
         ipv4_header = (struct iphdr*)(buffer + sizeof(struct ethhdr));
-        for (int i = 0; i < 32; i++) {
-            printf("%02x ", (unsigned char)((char *)ipv4_header)[i]);
+        if (ipv4_header->protocol != 89) {
+            continue;
         }
+        printf("第%d条报文\n", count++);
         if (ipv4_header->version == 4) {
             show_ipv4_header(ipv4_header);
         }
         printf("\n\n");
-        memset(buffer, 0, packet_len + 10);
     }
 }

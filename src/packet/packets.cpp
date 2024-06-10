@@ -11,8 +11,8 @@ void show_ipv4_header(struct iphdr *header) {
     printf("Time to Live (TTL): %d\n", header->ttl);
     printf("Protocol: %d\n", header->protocol);
     printf("Header Checksum: 0x%04x\n", ntohs(header->check));
-    struct in_addr src_ip = {ntohl(header->saddr)};
-    struct in_addr dst_ip = {ntohl(header->daddr)};
+    struct in_addr src_ip = {header->saddr};
+    struct in_addr dst_ip = {header->daddr};
     printf("Source Address: %s\n", inet_ntoa(src_ip));
     printf("Destination Address: %s\n", inet_ntoa(dst_ip));
 }
