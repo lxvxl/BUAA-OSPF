@@ -7,6 +7,8 @@ CXX = g++
 # 编译器选项
 CXXFLAGS = -Iinclude -std=c++17 -Wall -Wextra
 
+LDFLAGS = -pthread
+
 # 源文件目录
 SRC_DIR = src
 
@@ -18,7 +20,7 @@ OBJS = $(SRCS:.cpp=.o)
 
 # 链接目标
 $(TARGET): $(OBJS)
-	$(CXX) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 # 编译每个源文件到对象文件
 %.o: %.cpp

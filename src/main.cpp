@@ -4,7 +4,7 @@
 
 int main() {
     Interface interface;
-    interface.name = "eth0";
+    interface.name = "enp0s3";
     create_recv_thread(&interface);
     while (true)
     {
