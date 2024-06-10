@@ -35,7 +35,6 @@ void recv_thread_runner(Interface *interface) {
     while (true) {
         struct iphdr *ipv4_header;
         
-        memset(buffer, 0, BUFFER_SIZE);
         // 接收报文
         ssize_t packet_len = recv(socket_fd, buffer, BUFFER_SIZE, 0);
         if (packet_len < 0) {
@@ -44,9 +43,14 @@ void recv_thread_runner(Interface *interface) {
             exit(EXIT_FAILURE);
         }
 
-        ipv4_header = (struct iphdr*)buffer;
-
-        show_ipv4_header(ipv4_header);
+        ipv4_header = (struct iphdr*)(buffer + sizeof(struct ethhdr));
+        for (int i = 0; i < 32; i++) {
+            printf("%02x ", (unsigned char)((char *)ipv4_header)[i]);
+        }
+        if (ipv4_header->version == 4) {
+            show_ipv4_header(ipv4_header);
+        }
         printf("\n\n");
+        memset(buffer, 0, packet_len + 10);
     }
 }
