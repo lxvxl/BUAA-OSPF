@@ -15,6 +15,7 @@ typedef struct INTERFACE {
     std::thread rcv_thread;
     std::thread hello_thread;
     uint8_t     rtr_priority                = 1; 
+    uint32_t    ip                          = inet_addr("192.168.64.20");
     uint32_t    network_mask                = inet_addr("255.255.255.0");
     uint16_t    hello_interval              = 10;
     uint32_t    dead_interval               = 40;

@@ -18,7 +18,8 @@ void hello_thread_runner(Interface *interface);
 
 void create_hello_thread(Interface *interface) {
     interface->hello_thread = std::thread(hello_thread_runner, interface);
-    interface->rcv_thread.detach();
+    interface->hello_thread.detach();
+    return;
 }
 
 void create_recv_thread(Interface *interface) {
@@ -28,11 +29,11 @@ void create_recv_thread(Interface *interface) {
 }
 
 void hello_thread_runner(Interface *interface) {
+    printf("initing hello thread\n");
     int socket_fd;
     if ((socket_fd = socket(AF_INET, SOCK_RAW, 89)) < 0) {
         perror("[Thread]SendHelloPacket: socket_fd init");
     }
-
     /* Bind sockets to certain Network Interface */
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
@@ -59,6 +60,7 @@ void hello_thread_runner(Interface *interface) {
 
 
 void recv_thread_runner(Interface *interface) {
+    printf("initing recv thread\n");
     static int count = 1;
     int socket_fd;
     // 创建原始套接字
@@ -91,7 +93,9 @@ void recv_thread_runner(Interface *interface) {
         }
 
         ipv4_header = (struct iphdr*)(recv_buffer + sizeof(struct ethhdr));
-        if (ipv4_header->version != 4 || ipv4_header->protocol != 89) {
+        if (ipv4_header->version != 4 
+        || ipv4_header->protocol != 89 
+        || (ipv4_header->daddr != interface->ip && ipv4_header->daddr != inet_addr("224.0.0.5"))) {
             continue;
         }
 
