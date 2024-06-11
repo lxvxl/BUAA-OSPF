@@ -21,7 +21,7 @@ void show_ipv4_header(struct iphdr *header) {
 }
 
 void OSPFHeader::show() {
-    printf("Packet lenth: %d\n", packet_length);
+    printf("Packet lenth: %d\n", ntohs(packet_length));
     printf("Router Id: %s\n", ip_to_string(router_id));
     printf("Area Id: %s\n", ip_to_string(area_id));
 }
@@ -29,41 +29,41 @@ void OSPFHeader::show() {
 void OSPFHello::show() {
     header.show();
     printf("Network Mask: %s\n", ip_to_string(network_mask));
-    printf("Hello Interval: %d\n", hello_interval);
+    printf("Hello Interval: %d\n", ntohs(hello_interval)); // 转换为主机字节序
     printf("Router Priority: %d\n", rtr_priority);
-    printf("Dead Interval: %d\n", dead_interval);
+    printf("Dead Interval: %d\n", ntohl(dead_interval)); // 转换为主机字节序
     printf("Designated Router: %s\n", ip_to_string(designated_router));
     printf("Backup Designated Router: %s\n", ip_to_string(backup_designated_router));
 }
 
 void OSPFDD::show() {
     header.show();
-    printf("Interface MTU: %d\n", interface_mtu);
+    printf("Interface MTU: %d\n", ntohs(interface_mtu)); // 转换为主机字节序
     printf("Options: %d\n", options);
     printf("MS: %d\n", b_MS);
     printf("M: %d\n", b_M);
     printf("I: %d\n", b_I);
-    printf("Sequence Number: %d\n", dd_sequence_number);
+    printf("Sequence Number: %d\n", ntohl(dd_sequence_number)); // 转换为主机字节序
 }
 
 void OSPFLSR::show() {
     header.show();
-    printf("LS Type: %d\n", ls_type);
-    printf("Link State ID: %d\n", link_state_id);
-    printf("Advertising Router: %d\n", advertising_router);
+    printf("LS Type: %d\n", ntohl(ls_type)); // 转换为主机字节序
+    printf("Link State ID: %d\n", ntohl(link_state_id)); // 转换为主机字节序
+    printf("Advertising Router: %d\n", ntohl(advertising_router)); // 转换为主机字节序
 }
 
 void OSPFLSU::show() {
     header.show();
-    printf("Number of LSAs: %d\n", num_lsas);
+    printf("Number of LSAs: %d\n", ntohl(num_lsas)); // 转换为主机字节序
 }
 
 void OSPFLSA::show() {
     header.show();
-    printf("LS Type: %d\n", ls_type);
-    printf("Link State ID: %d\n", link_state_id);
-    printf("Advertising Router: %d\n", advertising_router);
-    printf("LS Sequence Number: %d\n", ls_sequence_number);
-    printf("LS Age: %d\n", ls_age);
-    printf("Checksum: %d\n", checksum);
+    printf("LS Type: %d\n", ntohl(ls_type)); // 转换为主机字节序
+    printf("Link State ID: %d\n", ntohl(link_state_id)); // 转换为主机字节序
+    printf("Advertising Router: %d\n", ntohl(advertising_router)); // 转换为主机字节序
+    printf("LS Sequence Number: %d\n", ntohl(ls_sequence_number)); // 转换为主机字节序
+    printf("LS Age: %d\n", ntohs(ls_age)); // 转换为主机字节序
+    printf("Checksum: %d\n", ntohs(checksum)); // 转换为主机字节序
 }
