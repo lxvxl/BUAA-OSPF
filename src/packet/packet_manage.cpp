@@ -54,6 +54,7 @@ void hello_thread_runner(Interface *interface) {
         if (sendto(socket_fd, send_buffer + 20, 44 + interface->neighbors.size() * 4, 0, (struct sockaddr*)&dst_sockaddr, sizeof(dst_sockaddr)) < 0) {
             perror("[Thread]SendHelloPacket: sendto");
         } 
+        printf("[hello thread] send a packet");
         std::this_thread::sleep_for(std::chrono::seconds(interface->hello_interval));
     }
 }
@@ -100,8 +101,8 @@ void recv_thread_runner(Interface *interface) {
         }
 
         printf("第%d条报文\n", count++);
-        show_ipv4_header(ipv4_header);
-        printf("\n\n");
+        //show_ipv4_header(ipv4_header);
+        //printf("\n\n");
 
         //分发报文
         struct OSPFHeader *ospf_header = (struct OSPFHeader*)ipv4_header; 
@@ -124,6 +125,7 @@ void recv_thread_runner(Interface *interface) {
             default:
                 printf("Error: illegal type");
         }
+        printf("\n\n");
     }
 }
 

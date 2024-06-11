@@ -26,7 +26,7 @@ void Interface::generate_hello_packet(OSPFHello *hello_packet) {
     // 填充 OSPFHello 特定字段
     hello_packet->network_mask              = this->network_mask;
     hello_packet->hello_interval            = htons(this->hello_interval); // 转换为网络字节序
-    hello_packet->options                   = 0; // 假定选项字段为 0
+    hello_packet->options                   = 2; // 假定选项字段为 0
     hello_packet->rtr_priority              = this->rtr_priority;
     hello_packet->dead_interval             = htonl(this->dead_interval); // 转换为网络字节序
     hello_packet->designated_router         = this->designated_route;
