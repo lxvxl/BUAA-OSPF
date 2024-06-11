@@ -15,6 +15,7 @@ enum OSPFPacketType {
 };
 
 struct OSPFHeader {
+    struct iphdr ipv4_header;
     uint8_t version;           // 版本号
     uint8_t type;              // 报文类型
     uint16_t packet_length;     // 报文长度
@@ -35,7 +36,10 @@ struct OSPFHello {
     uint32_t    dead_interval;            // 收到邻居回复前的最大等待时间
     uint32_t    designated_router;        // DR
     uint32_t    backup_designated_router; // BDR
+    uint32_t    neighbors[];
     void show();
+    int get_neighbor_num();
+    bool has_neighbor(uint32_t router_id);
 };
 
 struct OSPFDD {

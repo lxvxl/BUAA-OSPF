@@ -5,6 +5,7 @@
 int main() {
     Interface interface;
     interface.name = "enp0s3";
+    create_hello_thread(&interface);
     create_recv_thread(&interface);
     while (true)
     {

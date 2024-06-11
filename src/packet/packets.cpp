@@ -34,7 +34,25 @@ void OSPFHello::show() {
     printf("Dead Interval: %d\n", ntohl(dead_interval)); // 转换为主机字节序
     printf("Designated Router: %s\n", ip_to_string(designated_router));
     printf("Backup Designated Router: %s\n", ip_to_string(backup_designated_router));
+    printf("Neighbors: ");
+    for (int i = 0; i < get_neighbor_num(); i++) {
+        printf("%s ", ip_to_string(neighbors[i]));
+    }
+    printf("\n");
 }
+
+int OSPFHello::get_neighbor_num() {
+    return (ntohs(header.packet_length) - 44) / 4;
+}
+
+bool OSPFHello::has_neighbor(uint32_t router_id) {
+    for (int i = 0; i < get_neighbor_num(); i++) {
+        if (neighbors[i] == router_id) {
+            return true;
+        }
+    }
+    return false;
+}  
 
 void OSPFDD::show() {
     header.show();

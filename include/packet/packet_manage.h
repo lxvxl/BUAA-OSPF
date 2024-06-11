@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include "../interface/interface.h"
 
-/* Recv */
+void create_hello_thread(Interface *interface);
 void create_recv_thread(Interface *interface);
 
 
