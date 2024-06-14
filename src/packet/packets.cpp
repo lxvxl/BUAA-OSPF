@@ -76,7 +76,7 @@ void OSPFLSU::show() {
     printf("Number of LSAs: %d\n", ntohl(num_lsas)); // 转换为主机字节序
 }
 
-void OSPFLSA::show() {
+void OSPFLSAck::show() {
     header.show();
     printf("LS Type: %d\n", ntohl(ls_type)); // 转换为主机字节序
     printf("Link State ID: %d\n", ntohl(link_state_id)); // 转换为主机字节序

@@ -1,19 +1,12 @@
-#include "../../include/packet/packet_manage.h"
 #include "../../include/packet/packets.h"
 #include "../../include/interface/interface.h"
 #include "../../include/global_settings/common.h"
+#include <functional>
 
-Neighbor* Interface::get_neighbor(uint32_t router_id) {
-    for (auto n : neighbors) {
-        if (n->router_id == router_id) {
-            return n;
-        }
-    }
-    return NULL;
-}
 
-void Interface::generate_hello_packet(OSPFHello *hello_packet) {
+void Interface::generate_hello_packet() {
     // 填充 OSPFHeader
+    OSPFHello *hello_packet                 = (struct OSPFHello*)(this->send_buffer);
     hello_packet->header.version            = 2;  // OSPF 版本号
     hello_packet->header.type               = OSPFPacketType::HELLO;     // 报文类型 1 为 hello
     hello_packet->header.router_id          = this->router_id;  // 路由器 ID
@@ -26,7 +19,7 @@ void Interface::generate_hello_packet(OSPFHello *hello_packet) {
     // 填充 OSPFHello 特定字段
     hello_packet->network_mask              = this->network_mask;
     hello_packet->hello_interval            = htons(this->hello_interval); // 转换为网络字节序
-    hello_packet->options                   = 2; // 假定选项字段为 0
+    hello_packet->options                   = 2; // 假定选项字段为 2
     hello_packet->rtr_priority              = this->rtr_priority;
     hello_packet->dead_interval             = htonl(this->dead_interval); // 转换为网络字节序
     hello_packet->designated_router         = this->designated_route;
@@ -49,3 +42,52 @@ void Interface::generate_hello_packet(OSPFHello *hello_packet) {
     hello_packet->header.checksum = htons(~((sum & 0xFFFF) + (sum >> 16)));
 }
 
+void Interface::send_thread_runner() {
+    printf("initing hello thread\n");
+    int socket_fd;
+    if ((socket_fd = socket(AF_INET, SOCK_RAW, 89)) < 0) {
+        perror("[Thread]SendHelloPacket: socket_fd init");
+    }
+    /* Bind sockets to certain Network Interface */
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    strcpy(ifr.ifr_name, this->name);
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0) {
+        perror("[Thread]SendHelloPacket: setsockopt");
+    }
+
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        this->hello_timer--;
+        this->wait_timer--;
+        if (this->hello_timer == 0) {
+            this->send_hello_packet(socket_fd);
+        }
+        if (this->wait_timer == 0 && this->state == InterfaceState::WAITING) {
+            this->event_wait_timer();
+        }
+        for (auto neighbor : this->neighbors) {
+            neighbor->inactivity_timer--;
+            if (neighbor->inactivity_timer == 0) {
+                //TODO
+            }
+
+        }
+    }
+}
+
+void Interface::send_hello_packet(int socket_fd) {
+    struct sockaddr_in dst_sockaddr;
+    memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
+    dst_sockaddr.sin_family = AF_INET;
+    dst_sockaddr.sin_addr.s_addr = inet_addr("224.0.0.5");
+    this->generate_hello_packet();
+    if (sendto(socket_fd, 
+               this->send_buffer + 20, 
+               44 + this->neighbors.size() * 4, 
+               0, 
+               (struct sockaddr*)&dst_sockaddr, sizeof(dst_sockaddr)) < 0) {
+        perror("[Thread]SendHelloPacket: sendto");
+    } 
+    printf("[hello thread] send a packet");
+}

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <netinet/ip.h>
+#include "lsa.h"
 
 enum OSPFPacketType {
     HELLO = 1,
@@ -44,13 +45,14 @@ struct OSPFHello {
 
 struct OSPFDD {
     struct OSPFHeader header;
-    uint16_t interface_mtu;   // 接口MTU
-    uint8_t options;
+    uint16_t    interface_mtu;   // 接口MTU
+    uint8_t     options;
     uint8_t     b_MS: 1;
     uint8_t     b_M : 1;
     uint8_t     b_I : 1;
     uint8_t     b_other: 5;
-    uint32_t dd_sequence_number; // DD序列号
+    uint32_t    dd_sequence_number; // DD序列号
+    struct LSAHeader lsa_headers[];
     // 此处可以包含LSA头的列表
     void show();
 };
@@ -70,7 +72,7 @@ struct OSPFLSU {
     void show();
 };
 
-struct OSPFLSA {
+struct OSPFLSAck {
     struct OSPFHeader header;
     uint32_t ls_type;       // 链路状态类型
     uint32_t link_state_id; // 链路状态ID
@@ -86,4 +88,4 @@ struct OSPFLSA {
 
 void show_ipv4_header(struct iphdr *header);
 
-#endif // PACKET_MANAGE_H
+#endif
