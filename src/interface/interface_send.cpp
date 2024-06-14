@@ -70,7 +70,7 @@ void Interface::send_thread_runner() {
         for (auto neighbor : this->neighbors) {
             neighbor->inactivity_timer--;
             if (neighbor->inactivity_timer == 0) {
-                //TODO
+                neighbor->event_kill_nbr();
             }
 
         }

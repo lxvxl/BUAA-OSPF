@@ -93,6 +93,10 @@ void Interface::event_interface_down() {
 
 }
 
+bool is_bdr_or_dr(uint32_t ip, uint32_t dr, uint32_t bdr) {
+    return ip == dr || ip == bdr;
+}
+
 void Interface::elect_dr() {
     puts(inet_ntoa({ip}));
     // Step 1: Create a list of neighbors in FULL state with non-zero priority
@@ -124,35 +128,53 @@ void Interface::elect_dr() {
     uint32_t new_dr = 0;
     uint32_t new_bdr = 0;
 
-    // First pass: select BDR (highest priority, then highest router_id)
+    //选举BDR
+    //若有人宣告自己是BDR，选取其中优先度最高的，宣告自己是DR的不参与
     for (auto candidate : candidates) {
-        if (candidate->dr != candidate->ip) {
+        if (candidate->dr == candidate->ip) {
+            continue;
+        }
+        if (candidate->bdr == candidate->ip) {
+            new_bdr = candidate->ip;
+            break;
+        }
+    }
+    //若没人宣告自己是BDR，选取优先级最高的，同样排除宣告自己为DR的路由器
+    if (new_bdr == 0) {
+        for (auto candidate : candidates) {
+            if (candidate->dr == candidate->ip) {
+                continue;
+            }
             new_bdr = candidate->ip;
             break;
         }
     }
 
-    // Second pass: select DR (highest priority, then highest router_id)
+    //选举DR
+    //先从宣告自己是DR的接口里面找
     for (auto candidate : candidates) {
         if (candidate->dr == candidate->ip) {
             new_dr = candidate->ip;
-            break;
+            break;        
         }
     }
-
-    // If no DR was found in the second pass, promote BDR to DR
     if (new_dr == 0) {
         new_dr = new_bdr;
         new_bdr = 0;
-
-        // Find new BDR among remaining candidates
         for (auto candidate : candidates) {
-            if (candidate->ip != new_dr) {
-                new_bdr = candidate->ip;
-                break;
+            if (candidate->dr == candidate->ip) {
+                continue;
             }
-        }
+            new_bdr = candidate->ip;
+            break;
+        }    
     }
+    ////如果路由器 X 新近成为 DR 或 BDR，或者不再成为 DR 或 BDR，重复步骤 2 和 3
+    //if (is_bdr_or_dr(ip, dr, bdr) ^ is_bdr_or_dr(ip, new_dr, new_bdr)) {
+    //    if (ip == new_dr) {
+    //        
+    //    }
+    //}
 
     // Update interface DR and BDR
     dr = new_dr;
