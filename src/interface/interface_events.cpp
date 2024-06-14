@@ -94,6 +94,7 @@ void Interface::event_interface_down() {
 }
 
 void Interface::elect_dr() {
+    puts(inet_ntoa({ip}));
     // Step 1: Create a list of neighbors in FULL state with non-zero priority
     std::vector<Neighbor*> candidates;
     for (auto neighbor : neighbors) {
@@ -108,6 +109,7 @@ void Interface::elect_dr() {
         local_router.state = NeighborState::_2WAY;
         local_router.router_id = router_id;
         local_router.priority = rtr_priority;
+        local_router.ip = ip;
         candidates.push_back(&local_router);
     }
 
@@ -124,16 +126,16 @@ void Interface::elect_dr() {
 
     // First pass: select BDR (highest priority, then highest router_id)
     for (auto candidate : candidates) {
-        if (candidate->dr != candidate->router_id) {
-            new_bdr = candidate->router_id;
+        if (candidate->dr != candidate->ip) {
+            new_bdr = candidate->ip;
             break;
         }
     }
 
     // Second pass: select DR (highest priority, then highest router_id)
     for (auto candidate : candidates) {
-        if (candidate->dr == candidate->router_id) {
-            new_dr = candidate->router_id;
+        if (candidate->dr == candidate->ip) {
+            new_dr = candidate->ip;
             break;
         }
     }
@@ -145,8 +147,8 @@ void Interface::elect_dr() {
 
         // Find new BDR among remaining candidates
         for (auto candidate : candidates) {
-            if (candidate->router_id != new_dr) {
-                new_bdr = candidate->router_id;
+            if (candidate->ip != new_dr) {
+                new_bdr = candidate->ip;
                 break;
             }
         }

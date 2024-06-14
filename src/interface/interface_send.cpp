@@ -22,8 +22,8 @@ void Interface::generate_hello_packet() {
     hello_packet->options                   = 2; // 假定选项字段为 2
     hello_packet->rtr_priority              = this->rtr_priority;
     hello_packet->dead_interval             = htonl(this->dead_interval); // 转换为网络字节序
-    hello_packet->designated_router         = this->designated_route;
-    hello_packet->backup_designated_router  = this->backup_designated_router;
+    hello_packet->designated_router         = this->dr;
+    hello_packet->backup_designated_router  = this->bdr;
 
     // 填充邻居路由器列表
     int neighbor_count                      = this->neighbors.size();
@@ -61,6 +61,7 @@ void Interface::send_thread_runner() {
         this->hello_timer--;
         this->wait_timer--;
         if (this->hello_timer == 0) {
+            this->hello_timer = 10;
             this->send_hello_packet(socket_fd);
         }
         if (this->wait_timer == 0 && this->state == InterfaceState::WAITING) {
