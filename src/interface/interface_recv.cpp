@@ -52,7 +52,7 @@ void Interface::recv_thread_runner() {
             continue;
         }
 
-        printf("第%d条报文\n", count++);
+        //printf("第%d条报文\n", count++);
 
         //分发报文
         struct OSPFHeader *ospf_header = (struct OSPFHeader*)ipv4_header; 
@@ -75,7 +75,6 @@ void Interface::recv_thread_runner() {
             default:
                 printf("Error: illegal type");
         }
-        printf("\n\n");
     }    
 }
 
@@ -99,6 +98,11 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface) {
     if (neighbor->state == NeighborState::INIT && hello_packet->has_neighbor(interface->router_id)) {
         neighbor->event_2way_received();
     }
+    uint32_t saddr = hello_packet->header.ipv4_header.saddr;
+    std::cout<<saddr<<"  1  "<<hello_packet->backup_designated_router<<std::endl;
+    if (hello_packet->backup_designated_router == saddr || (hello_packet->designated_router == saddr && hello_packet->backup_designated_router == 0)) {
+        interface->event_backup_seen();
+    }
     if (hello_packet->has_neighbor(interface->router_id)
         && neighbor->state == NeighborState::INIT) {
         neighbor->state = NeighborState::_2WAY;
@@ -107,7 +111,7 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface) {
 
 void handle_recv_dd(OSPFDD *dd_packet) {
     // 在此处理DD报文
-    dd_packet->show();
+    //dd_packet->show();
 }
 
 void handle_recv_lsr(OSPFLSR *lsr_packet) {

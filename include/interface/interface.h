@@ -34,7 +34,7 @@ typedef struct INTERFACE {
     uint32_t    network_mask                = inet_addr("255.255.255.0");
     uint32_t    area_id                     = 0;
     uint16_t    hello_interval              = 10;
-    uint32_t    dead_interval               = 40;
+    uint32_t    dead_interval               = 5;
     uint32_t    designated_route            = 0; // 这里用的是网络字节序
     uint32_t    backup_designated_router    = 0;     
     uint32_t    router_id                   = inet_addr("2.2.2.2");

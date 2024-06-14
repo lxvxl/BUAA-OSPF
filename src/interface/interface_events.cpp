@@ -73,6 +73,7 @@ void Interface::event_backup_seen() {
     } else {
         this->state = InterfaceState::DROTHER;
     }
+    this->wait_timer = -1;
 end:
     print_state_log
 }
@@ -98,7 +99,6 @@ bool is_bdr_or_dr(uint32_t ip, uint32_t dr, uint32_t bdr) {
 }
 
 void Interface::elect_dr() {
-    puts(inet_ntoa({ip}));
     // Step 1: Create a list of neighbors in FULL state with non-zero priority
     std::vector<Neighbor*> candidates;
     for (auto neighbor : neighbors) {
@@ -114,6 +114,8 @@ void Interface::elect_dr() {
         local_router.router_id = router_id;
         local_router.priority = rtr_priority;
         local_router.ip = ip;
+        local_router.dr = dr;
+        local_router.bdr = bdr;
         candidates.push_back(&local_router);
     }
 
@@ -162,7 +164,7 @@ void Interface::elect_dr() {
         new_dr = new_bdr;
         new_bdr = 0;
         for (auto candidate : candidates) {
-            if (candidate->dr == candidate->ip) {
+            if (new_dr == candidate->ip) {
                 continue;
             }
             new_bdr = candidate->ip;
@@ -181,7 +183,8 @@ void Interface::elect_dr() {
     bdr = new_bdr;
 
     // Print the results for debugging purposes
-    std::cout << "New DR: " << inet_ntoa({new_dr}) << ", New BDR: " << inet_ntoa({new_bdr}) << std::endl;
+    std::cout << "New DR: " << inet_ntoa({new_dr});
+    std::cout << ", New BDR: " << inet_ntoa({new_bdr}) << std::endl;
 
     for (auto neighbor : this->neighbors) {
         neighbor->event_is_adj_ok();
