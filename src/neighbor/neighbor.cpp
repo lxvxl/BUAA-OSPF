@@ -1,20 +1,30 @@
 #include "../../include/neighbor/neighbor.h"
 #include "../../include/global_settings/common.h"
+#include "../../include/global_settings/router.h"
 #include "../../include/logger/logger.h"
+#include "../../include/db/lsa_db.h"
 
 #define mark_state NeighborState pre_state = this->state;
 #define print_state_log logger::state_transition_log(this, pre_state, this->state);
 
-struct NEIGHBOR* generate_from_hello(struct OSPFHello *hello_packet, Interface *interface) {
-    struct NEIGHBOR *neighbor = new NEIGHBOR;
-    neighbor->router_id = hello_packet->header.router_id;
-    neighbor->priority  = hello_packet->rtr_priority;
-    neighbor->ip        = hello_packet->header.ipv4_header.saddr;
-    neighbor->dr        = hello_packet->designated_router;
-    neighbor->bdr       = hello_packet->backup_designated_router;
-    neighbor->interface = interface;
-    return neighbor;
+Neighbor::Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip) {
+    this->router_id = hello_packet->header.router_id;
+    this->priority  = hello_packet->rtr_priority;
+    this->ip        = ip;
+    this->dr        = hello_packet->designated_router;
+    this->bdr       = hello_packet->backup_designated_router;
+    this->interface = interface;
+    this->b_I       = 1;
+    this->b_M       = 1;
+    this->b_MS      = 1;
+    this->dd_last_recv = (OSPFDD*)malloc(4096);
+    this->dd_last_send = (OSPFDD*)malloc(4096);
 }
+
+Neighbor::Neighbor() {
+}
+
+
 
 void Neighbor::event_hello_received() {
     logger::event_log(this, "hello_received");
@@ -34,7 +44,7 @@ void Neighbor::event_start() {
     //NBMA网络暂时不管
 }   
 
-void Neighbor::event_2way_received() {
+void Neighbor::event_2way_received(Interface *interface) {
     logger::event_log(this, "2way_received");
     mark_state
 
@@ -45,7 +55,10 @@ void Neighbor::event_2way_received() {
             || this->interface->bdr == this->interface->ip
             || this->interface->dr == this->ip
             || this->interface->bdr == this->ip) {
+        this->dd_sequence_number = this->interface->router_id;
+        this->dd_reset_lsas();
         this->state = EXSTART;
+        interface->send_dd_packet(this);
     } else {
         this->state = _2WAY;
     }
@@ -55,11 +68,20 @@ end:
 }
 
 void Neighbor::event_negotiation_done() {
+    logger::event_log(this, "negotiation_done");
+    mark_state
 
+    this->state = NeighborState::EXCHANGE;
+    print_state_log
 }
 
 void Neighbor::event_exchange_done() {
+    logger::event_log(this, "exchange done");
+    mark_state
 
+    this->rxmt_timer = -1;
+
+    print_state_log
 }   
 
 void Neighbor::event_bad_lsreq() {
@@ -79,6 +101,8 @@ void Neighbor::event_is_adj_ok() {
                 || this->interface->bdr == this->interface->ip
                 || this->interface->dr == this->ip
                 || this->interface->bdr == this->ip) {
+            this->dd_sequence_number = this->interface->router_id;
+            this->dd_reset_lsas();
             this->state = EXSTART;
         } else {
             this->state = _2WAY;
@@ -108,4 +132,35 @@ void Neighbor::event_inactivity_timer() {
 void Neighbor::event_ll_down() {
 
 }   
+
+void Neighbor::dd_reset_lsas() {
+    this->dd_recorder = 0;
+    this->dd_lsa_headers.clear();
+    LSADatabase *db = this->interface->db;
+    if (db->network_lsa != NULL) {
+        this->dd_lsa_headers.push_back((LSAHeader*)db->network_lsa);
+    }
+    if (db->my_router_lsa != NULL) {
+        this->dd_lsa_headers.push_back((LSAHeader*)db->my_router_lsa);
+    }
+    for (auto router_lsa : db->router_lsas) {
+        this->dd_lsa_headers.push_back((LSAHeader*)router_lsa);
+    }
+    req_lsas.clear();
+}
+
+int Neighbor::fill_lsa_headers(LSAHeader *headers) {
+    int pre_recorder = this->dd_recorder;
+    int i = 0;
+    int max = (router::config::MTU - sizeof(OSPFDD)) / sizeof(LSAHeader);
+    for (;this->dd_recorder < dd_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
+        headers[i] = *dd_lsa_headers[i];
+    }
+    return i;
+}
+
+bool Neighbor::dd_has_more_lsa() {
+    return dd_recorder >= dd_lsa_headers.size();
+}
+
 

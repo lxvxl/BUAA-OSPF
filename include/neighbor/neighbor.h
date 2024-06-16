@@ -6,8 +6,11 @@
 #include <arpa/inet.h>
 #include "../packet/packets.h"
 #include "../interface/interface.h"
+#include "../packet/packets.h"
 
-typedef struct INTERFACE Interface;
+struct Interface;
+struct OSPFDD;
+struct OSPFHello;
 
 enum NeighborState {
     N_DOWN,           //初始状态
@@ -20,7 +23,7 @@ enum NeighborState {
     FULL            //达到完全邻接
 };
 
-typedef struct NEIGHBOR {
+struct Neighbor {
     NeighborState   state               = NeighborState::N_DOWN;
     uint32_t        router_id;
     uint32_t        dr;
@@ -29,14 +32,33 @@ typedef struct NEIGHBOR {
     uint32_t        ip;
     bool            is_master;
     uint32_t        inactivity_timer    = -1;
+    uint32_t        rxmt_timer          = -1;
+    uint32_t        dd_sequence_number; // DD序列号
+
+
+    uint8_t         b_MS: 1             ;
+    uint8_t         b_M : 1             ;
+    uint8_t         b_I : 1             ;
+    uint8_t         b_other: 5;
+
     Interface*      interface;
+
+    OSPFDD*         dd_last_recv;
+    OSPFDD*         dd_last_send;
+    int             dd_recorder;
+    std::vector<LSAHeader*> dd_lsa_headers;
+
+    std::vector<LSAHeader*> req_lsas;
+
+    Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip);
+    Neighbor();
 
     //从邻居接收一个Hello包
     void            event_hello_received();
     //将以 HelloInterval 秒的间隔向邻居发送 Hello 包     
     void            event_start();
     //在邻居的 Hello 包中包含了路由器自身 
-    void            event_2way_received(); 
+    void            event_2way_received(Interface *interface); 
     //已经协商好主从关系，并交换了 DD 序号
     void            event_negotiation_done();  
     //已成功交换了完整的 DD 包
@@ -56,8 +78,10 @@ typedef struct NEIGHBOR {
     //非活跃记时器被激活。这说明最近没有从邻居接收到 Hello 包。强制转换邻居状态到 Down。
     void            event_inactivity_timer();
     //由下层协议说明，邻居不可到达。
-    void            event_ll_down();        
-} Neighbor;
+    void            event_ll_down();     
 
-struct NEIGHBOR* generate_from_hello(struct OSPFHello *hello_packet, Interface *interface);
+    void            dd_reset_lsas();
+    bool            dd_has_more_lsa();
+    int             fill_lsa_headers(LSAHeader *headers);
+};
 #endif 

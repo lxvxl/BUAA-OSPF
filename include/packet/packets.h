@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <netinet/ip.h>
 #include "lsa.h"
+#include "../interface/interface.h"
 
 enum OSPFPacketType {
     HELLO = 1,
@@ -15,17 +16,20 @@ enum OSPFPacketType {
     ERROR
 };
 
+struct Interface;
+struct Neighbor;
+
 struct OSPFHeader {
-    struct iphdr ipv4_header;
-    uint8_t version;           // 版本号
-    uint8_t type;              // 报文类型
-    uint16_t packet_length;     // 报文长度
-    uint32_t router_id;         // 路由器ID
-    uint32_t area_id;           // 区域ID
-    uint16_t checksum;         // 校验和
-    uint16_t authType;         // 认证类型
-    uint32_t authentication[2];
-    void show();
+    uint8_t     version;           // 版本号
+    uint8_t     type;              // 报文类型
+    uint16_t    packet_length;     // 报文长度
+    uint32_t    router_id;         // 路由器ID
+    uint32_t    area_id;           // 区域ID
+    uint16_t    checksum;         // 校验和
+    uint16_t    authType;         // 认证类型
+    uint32_t    authentication[2];
+    void        show();
+    void        generate(OSPFPacketType type, uint32_t router_id, uint32_t area_id, uint16_t packet_length);
 };
 
 struct OSPFHello {
@@ -38,9 +42,11 @@ struct OSPFHello {
     uint32_t    designated_router;        // DR
     uint32_t    backup_designated_router; // BDR
     uint32_t    neighbors[];
-    void show();
-    int get_neighbor_num();
-    bool has_neighbor(uint32_t router_id);
+
+    void        show();
+    int         get_neighbor_num();
+    bool        has_neighbor(uint32_t router_id);
+    void        generate(Interface *interface);
 };
 
 struct OSPFDD {
@@ -54,7 +60,10 @@ struct OSPFDD {
     uint32_t    dd_sequence_number; // DD序列号
     struct LSAHeader lsa_headers[];
     // 此处可以包含LSA头的列表
-    void show();
+
+    void        show();
+    int         get_lsa_num();
+    void        generate(Neighbor *neighbor);
 };
 
 struct OSPFLSR {

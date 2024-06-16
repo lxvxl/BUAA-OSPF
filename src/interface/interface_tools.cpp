@@ -10,3 +10,8 @@ Neighbor* Interface::get_neighbor(uint32_t router_id) {
     }
     return NULL;
 }
+
+Interface::Interface(const char *name) {
+    this->name = name;
+    this->db   = new LSADatabase(this); 
+}

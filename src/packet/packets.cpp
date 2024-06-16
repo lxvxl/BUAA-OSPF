@@ -1,5 +1,7 @@
 #include "../../include/packet/packets.h"
 #include "../../include/global_settings/common.h"
+#include "../../include/global_settings/router.h"
+
 
 char* ip_to_string(uint32_t ip) {
     struct in_addr addr = {ip};
@@ -26,6 +28,25 @@ void OSPFHeader::show() {
     printf("Area Id: %s\n", ip_to_string(area_id));
 }
 
+void OSPFHeader::generate(OSPFPacketType type, uint32_t router_id, uint32_t area_id, uint16_t packet_length) {
+    this->version            = 2;  // OSPF 版本号
+    this->type               = type;     // 报文类型 1 为 hello
+    this->packet_length      = htons(packet_length);
+    this->router_id          = router_id;  // 路由器 ID
+    this->area_id            = area_id; 
+    this->checksum           = 0; // 校验和，后面再计算
+    this->authType           = 0; // 认证类型，假定为 0
+    this->authentication[0]  = 0;
+    this->authentication[1]  = 0;
+    
+    uint16_t *packet_ptr = (uint16_t *)((char*)this);
+    uint32_t sum = 0;
+    for (int i = 0; i < packet_length / 2; ++i) {
+        sum += ntohs(packet_ptr[i]);
+    }
+    this->checksum          = htons(~((sum & 0xFFFF) + (sum >> 16)));
+}
+
 void OSPFHello::show() {
     header.show();
     printf("Network Mask: %s\n", ip_to_string(network_mask));
@@ -39,6 +60,24 @@ void OSPFHello::show() {
         printf("%s ", ip_to_string(neighbors[i]));
     }
     printf("\n");
+}
+
+void OSPFHello::generate(Interface *interface) {
+    // 填充 OSPFHello 特定字段
+    this->network_mask              = interface->network_mask;
+    this->hello_interval            = htons(interface->hello_interval); // 转换为网络字节序
+    this->options                   = router::config::options; // 假定选项字段为 2
+    this->rtr_priority              = interface->rtr_priority;
+    this->dead_interval             = htonl(interface->dead_interval); // 转换为网络字节序
+    this->designated_router         = interface->dr;
+    this->backup_designated_router  = interface->bdr;
+
+    // 填充邻居路由器列表
+    int neighbor_count              = interface->neighbors.size();
+    for (int i = 0; i < neighbor_count; ++i) {
+        this->neighbors[i] = interface->neighbors[i]->router_id;
+    }
+    ((OSPFHeader*)this)->generate(OSPFPacketType::HELLO, interface->router_id, interface->area_id, sizeof(OSPFHello) + neighbor_count * 4);
 }
 
 int OSPFHello::get_neighbor_num() {
@@ -63,6 +102,32 @@ void OSPFDD::show() {
     printf("I: %d\n", b_I);
     printf("Sequence Number: %d\n", ntohl(dd_sequence_number)); // 转换为主机字节序
 }
+
+int OSPFDD::get_lsa_num() {
+    return (this->header.packet_length - sizeof(OSPFDD)) / sizeof(LSAHeader);
+}
+
+void OSPFDD::generate(Neighbor *neighbor) {
+    this->interface_mtu      = htons(router::config::MTU);   // 接口MTU
+    this->options            = router::config::options;
+    this->b_MS               = neighbor->b_MS;
+    this->b_M                = neighbor->dd_has_more_lsa();
+    this->b_I                = neighbor->b_I;
+    this->b_other            = 0;
+    this->dd_sequence_number = htonl(neighbor->dd_sequence_number); // DD序列号
+    neighbor->dd_sequence_number++;
+
+    Interface *interface = neighbor->interface;
+    int header_num;
+    if (this->b_I) {
+        header_num = 0; 
+    } else {
+        header_num = neighbor->fill_lsa_headers(this->lsa_headers);
+    } 
+    
+    ((OSPFHeader*)this)->generate(OSPFPacketType::DD, interface->router_id, interface->area_id, sizeof(OSPFDD) + header_num * sizeof(LSAHeader));
+}
+
 
 void OSPFLSR::show() {
     header.show();
