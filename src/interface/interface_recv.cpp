@@ -190,10 +190,11 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 }
                 interface->send_dd_packet(neighbor);
             }
-        case LOADING:
-        case FULL:
-    default:
-        break;
+            break;
+        //case LOADING:
+        //case FULL:
+        default:
+            break;
     }
 }
 

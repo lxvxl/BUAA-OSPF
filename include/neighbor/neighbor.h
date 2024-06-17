@@ -5,12 +5,14 @@
 #include <stddef.h>
 #include <arpa/inet.h>
 #include "../packet/packets.h"
+#include "../packet/lsa.h"
 #include "../interface/interface.h"
-#include "../packet/packets.h"
+#include <vector>
 
 struct Interface;
 struct OSPFDD;
 struct OSPFHello;
+struct LSAHeader;
 
 enum NeighborState {
     N_DOWN,           //初始状态
