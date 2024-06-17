@@ -104,14 +104,13 @@ void OSPFDD::show() {
 }
 
 int OSPFDD::get_lsa_num() {
-    return (this->header.packet_length - sizeof(OSPFDD)) / sizeof(LSAHeader);
+    return (ntohs(this->header.packet_length) - sizeof(OSPFDD)) / sizeof(LSAHeader);
 }
 
 void OSPFDD::generate(Neighbor *neighbor) {
     this->interface_mtu      = htons(router::config::MTU);   // 接口MTU
     this->options            = router::config::options;
     this->b_MS               = neighbor->b_MS;
-    this->b_M                = neighbor->dd_has_more_lsa();
     this->b_I                = neighbor->b_I;
     this->b_other            = 0;
     this->dd_sequence_number = htonl(neighbor->dd_sequence_number); // DD序列号
@@ -124,6 +123,7 @@ void OSPFDD::generate(Neighbor *neighbor) {
     } else {
         header_num = neighbor->fill_lsa_headers(this->lsa_headers);
     } 
+    this->b_M                = neighbor->dd_has_more_lsa();
     
     ((OSPFHeader*)this)->generate(OSPFPacketType::DD, interface->router_id, interface->area_id, sizeof(OSPFDD) + header_num * sizeof(LSAHeader));
 }

@@ -10,6 +10,7 @@
 struct Interface;
 struct RouterLSA;
 struct NetworkLSA;
+struct LSAHeader;
 
 struct LSADatabase {
     NetworkLSA              *network_lsa    = NULL;

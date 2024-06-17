@@ -1,4 +1,4 @@
-#include "../../include/packet/lsa.h"
+#include "../../include/packet/packets.h"
 #include "../../include/global_settings/common.h"
 
 bool LSAHeader::operator==(LSAHeader &another) {

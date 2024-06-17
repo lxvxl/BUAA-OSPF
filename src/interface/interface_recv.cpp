@@ -48,7 +48,7 @@ void Interface::recv_thread_runner() {
             continue;
         }
         
-        struct OSPFHeader *ospf_header = (struct OSPFHeader*)(recv_buffer + sizeof(struct ethhdr) + sizeof(ipv4_header)); 
+        struct OSPFHeader *ospf_header = (struct OSPFHeader*)(recv_buffer + sizeof(struct ethhdr) + sizeof(struct iphdr)); 
         uint32_t saddr = ipv4_header->saddr;
 
         //分发报文
@@ -77,7 +77,6 @@ void Interface::recv_thread_runner() {
 
 void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t saddr) {
     // 在此处理Hello报文
-    hello_packet->show();
     if (hello_packet->network_mask != interface->network_mask
         || ntohs(hello_packet->hello_interval) != interface->hello_interval
         || ntohl(hello_packet->dead_interval) != interface->dead_interval
@@ -103,12 +102,14 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
 }
 
 void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
-    if (ntohs(dd_packet->interface_mtu) > router::config::MTU) {
-        return;
-    }
+    //if (ntohs(dd_packet->interface_mtu) > router::config::MTU) {
+    //    return;
+    //}
     // 在此处理DD报文
+    printf("dd!\n");
     Neighbor *neighbor = interface->get_neighbor(dd_packet->header.router_id);
     OSPFDD *last_dd = neighbor->dd_last_recv;
+    uint32_t packet_dd_seq_num = ntohl(dd_packet->dd_sequence_number);
     switch (neighbor->state) {
         case DOWN:
         case ATTEMPT:
@@ -126,10 +127,12 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                     && dd_packet->b_M == last_dd->b_M
                     && dd_packet->b_MS == last_dd->b_MS
                     && dd_packet->dd_sequence_number == last_dd->dd_sequence_number) {
+                printf("dd refused: repeated paket\n");
                 return;
             } 
-            *last_dd = *dd_packet;
+            memcpy(last_dd, dd_packet, 2048);
             if (dd_packet->get_lsa_num() != 0 || !dd_packet->b_I || !dd_packet->b_M || !dd_packet->b_MS) {
+                std::cout<<"dd refused: exchange wrong format"<<dd_packet->get_lsa_num()<<std::endl;
                 return;
             }
             //确定主从
@@ -163,7 +166,6 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             }
             memcpy(last_dd, dd_packet, 2048);
             //检查dd序号
-            uint32_t packet_dd_seq_num = ntohl(dd_packet->dd_sequence_number);
             if (neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num 
                 || !neighbor->b_MS && neighbor->dd_sequence_number + 1 != packet_dd_seq_num) {
                 neighbor->event_seq_num_mismatch();
@@ -191,8 +193,8 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 interface->send_dd_packet(neighbor);
             }
             break;
-        //case LOADING:
-        //case FULL:
+        case LOADING:
+        case FULL:
         default:
             break;
     }

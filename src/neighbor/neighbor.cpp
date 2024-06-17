@@ -5,7 +5,7 @@
 #include "../../include/db/lsa_db.h"
 
 #define mark_state NeighborState pre_state = this->state;
-#define print_state_log logger::state_transition_log(this, pre_state, this->state);
+#define print_state_log if (pre_state != this->state) {logger::state_transition_log(this, pre_state, this->state);}
 
 Neighbor::Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip) {
     this->router_id = hello_packet->header.router_id;
@@ -104,6 +104,7 @@ void Neighbor::event_is_adj_ok() {
             this->dd_sequence_number = this->interface->router_id;
             this->dd_reset_lsas();
             this->state = EXSTART;
+            interface->send_dd_packet(this);
         } else {
             this->state = _2WAY;
         }
@@ -150,7 +151,6 @@ void Neighbor::dd_reset_lsas() {
 }
 
 int Neighbor::fill_lsa_headers(LSAHeader *headers) {
-    int pre_recorder = this->dd_recorder;
     int i = 0;
     int max = (router::config::MTU - sizeof(OSPFDD)) / sizeof(LSAHeader);
     for (;this->dd_recorder < dd_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
@@ -160,7 +160,7 @@ int Neighbor::fill_lsa_headers(LSAHeader *headers) {
 }
 
 bool Neighbor::dd_has_more_lsa() {
-    return dd_recorder >= dd_lsa_headers.size();
+    return dd_recorder < dd_lsa_headers.size();
 }
 
 

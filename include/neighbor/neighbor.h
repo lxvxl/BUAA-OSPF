@@ -47,7 +47,7 @@ struct Neighbor {
 
     OSPFDD*         dd_last_recv;
     OSPFDD*         dd_last_send;
-    int             dd_recorder;
+    size_t          dd_recorder;
     std::vector<LSAHeader*> dd_lsa_headers;
 
     std::vector<LSAHeader*> req_lsas;
