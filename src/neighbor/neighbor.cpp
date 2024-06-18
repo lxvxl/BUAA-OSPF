@@ -146,6 +146,7 @@ int Neighbor::fill_lsa_headers(LSAHeader *headers) {
     int max = (router::config::MTU - sizeof(OSPFDD)) / sizeof(LSAHeader);
     for (;this->dd_recorder < dd_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
         headers[i] = *dd_lsa_headers[i];
+        headers[i].hton();
     }
     return i;
 }
