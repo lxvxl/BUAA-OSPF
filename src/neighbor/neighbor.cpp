@@ -55,7 +55,7 @@ void Neighbor::event_2way_received(Interface *interface) {
             || this->interface->bdr == this->interface->ip
             || this->interface->dr == this->ip
             || this->interface->bdr == this->ip) {
-        this->dd_sequence_number = this->interface->router_id;
+        this->dd_sequence_number = router::router_id;
         this->dd_reset_lsas();
         this->state = EXSTART;
         interface->send_dd_packet(this);
@@ -80,6 +80,7 @@ void Neighbor::event_exchange_done() {
     mark_state
 
     this->rxmt_timer = -1;
+    this->state      = this->req_lsas.size() == 0 ? FULL : LOADING;
 
     print_state_log
 }   
@@ -101,7 +102,7 @@ void Neighbor::event_is_adj_ok() {
                 || this->interface->bdr == this->interface->ip
                 || this->interface->dr == this->ip
                 || this->interface->bdr == this->ip) {
-            this->dd_sequence_number = this->interface->router_id;
+            this->dd_sequence_number = router::router_id;
             this->dd_reset_lsas();
             this->state = EXSTART;
             interface->send_dd_packet(this);
@@ -110,7 +111,6 @@ void Neighbor::event_is_adj_ok() {
         }
     }
 
-end:
     print_state_log
 }   
 
@@ -136,17 +136,8 @@ void Neighbor::event_ll_down() {
 
 void Neighbor::dd_reset_lsas() {
     this->dd_recorder = 0;
-    this->dd_lsa_headers.clear();
-    LSADatabase *db = this->interface->db;
-    if (db->network_lsa != NULL) {
-        this->dd_lsa_headers.push_back((LSAHeader*)db->network_lsa);
-    }
-    if (db->my_router_lsa != NULL) {
-        this->dd_lsa_headers.push_back((LSAHeader*)db->my_router_lsa);
-    }
-    for (auto router_lsa : db->router_lsas) {
-        this->dd_lsa_headers.push_back((LSAHeader*)router_lsa);
-    }
+    LSADatabase *db = &router::lsa_db;
+    db->get_all_lsa(&this->dd_lsa_headers);
     req_lsas.clear();
 }
 

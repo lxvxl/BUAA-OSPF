@@ -2,6 +2,7 @@
 #include "../../include/interface/interface.h"
 #include "../../include/global_settings/common.h"
 #include "../../include/logger/logger.h"
+#include "../../include/global_settings/router.h"
 #include <functional>
 #define mark_state InterfaceState pre_state = this->state;
 #define print_state_log logger::state_transition_log(this, pre_state, this->state);
@@ -111,7 +112,7 @@ void Interface::elect_dr() {
     if (rtr_priority > 0) {
         Neighbor local_router;
         local_router.state = NeighborState::_2WAY;
-        local_router.router_id = router_id;
+        local_router.router_id = router::router_id;
         local_router.priority = rtr_priority;
         local_router.ip = ip;
         local_router.dr = dr;

@@ -2,7 +2,6 @@
 #include "../../include/interface/interface.h"
 #include "../../include/global_settings/common.h"
 #include <functional>
-#include "../../include/global_settings/config.h"
 
 void Interface::send_thread_runner() {
     printf("initing hello thread\n");
@@ -47,7 +46,7 @@ void Interface::send_hello_packet() {
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
     dst_sockaddr.sin_family = AF_INET;
     dst_sockaddr.sin_addr.s_addr = inet_addr("224.0.0.5");
-    ((OSPFHello*)this->send_buffer)->generate(this);
+    ((OSPFHello*)this->send_buffer)->fill(this);
     if (sendto(this->send_socket_fd, 
                this->send_buffer, 
                44 + this->neighbors.size() * 4, 
@@ -63,7 +62,7 @@ void Interface::send_dd_packet(Neighbor *neighbor) {
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
     dst_sockaddr.sin_family = AF_INET;
     dst_sockaddr.sin_addr.s_addr = neighbor->ip;
-    ((OSPFDD*)this->send_buffer)->generate(neighbor);
+    ((OSPFDD*)this->send_buffer)->fill(neighbor);
     if (sendto(this->send_socket_fd, 
                this->send_buffer, 
                ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 

@@ -1,6 +1,146 @@
 #include "../../include/packet/packets.h"
 #include "../../include/global_settings/common.h"
+#include "../../include/global_settings/router.h"
 
-bool LSAHeader::operator==(LSAHeader &another) {
-    return memcmp(this, &another, sizeof(LSAHeader));
+LSAHeader::Relation LSAHeader::compare(LSAHeader *another) {
+    //这里有问题！！没有完全实现
+    if (ls_type != another->ls_type 
+            || link_state_id != another->link_state_id 
+            || advertising_router != another->advertising_router) {
+        return NOT_SAME;
+    }
+
+    if (ls_seq_num > another->ls_seq_num) {
+        return NEWER;
+    } else if (ls_seq_num < another->ls_seq_num) {
+        return OLDER;
+    }
+
+    // Checksums are the same, compare ages
+    if (ls_age > another->ls_age) {
+        return OLDER;
+    } else if (ls_age < another->ls_age) {
+        return NEWER;
+    }
+
+    return SAME;
+}
+
+void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length)
+{
+    this->ls_age              = 0;                
+    this->options             = router::config::options;               
+    this->ls_type             = type;             
+    this->advertising_router  = router::router_id;    
+    this->ls_seq_num          = ls_seq_num;    
+    this->length              = length;     
+    this->link_state_id       = link_state_id;          
+    this->ls_checksum         = 0;        
+
+    uint8_t* data = (uint8_t*)this;
+    data += 2;
+
+    uint32_t c0 = 0;
+    uint32_t c1 = 0;
+
+    for (size_t i = 0; i < length - 2; ++i) {
+        c0 = (c0 + data[i]) % 255;
+        c1 = (c1 + c0) % 255;
+    }
+    this->ls_checksum = (uint16_t)((c1 << 8) | c0);
+}
+
+void LSAHeader::hton() {
+    this->ls_seq_num  = htonl(this->ls_seq_num);
+    this->length      = htons(this->length);
+    this->ls_checksum = htonl(this->ls_checksum);
+}
+
+
+void LSAHeader::ntoh() {
+    this->ls_seq_num  = ntohl(this->ls_seq_num);
+    this->length      = ntohs(this->length);
+    this->ls_checksum = ntohl(this->ls_checksum);
+}
+
+RouterLSALink::RouterLSALink(uint32_t link_id, uint32_t link_data, uint8_t type, uint8_t tos_num, uint16_t metric) {
+    this->link_id = link_id;
+    this->link_data = link_data;
+    this->type = type;
+    this->tos_num = tos_num;
+    this->metric = metric;
+}
+
+RouterLSA *RouterLSA::generate() {
+    std::vector<RouterLSALink> links;
+    for (auto interface : router::interfaces) {
+        if (interface->state == DOWN) {
+            continue;
+        }
+        // 已经与DR建立关系
+        if (interface->state != WAITING) {
+            //如果路由器自身为DR且与至少一台其他路由器邻接，加入类型 2 连接（传输网络）。否则，加入类型3
+            if (interface->dr == interface->ip){
+                if (interface->neighbors.size() > 0) {
+                    links.emplace_back(RouterLSALink(interface->dr, 
+                                                interface->ip, 
+                                                (uint8_t)TRAN, 
+                                                (uint8_t)0, 
+                                                interface->metric));
+                } else {
+                    links.emplace_back(RouterLSALink(interface->ip, 
+                                                interface->network_mask, 
+                                                (uint8_t)STUB, 
+                                                (uint8_t)0, 
+                                                interface->metric));
+                }
+                continue;
+            }
+            //如果路由器与 DR 完全邻接，加入类型2连接
+            if (interface->get_neighbor_by_ip(interface->dr)->state == FULL) {
+                links.emplace_back(RouterLSALink(interface->dr, 
+                                                interface->ip, 
+                                                (uint8_t)TRAN, 
+                                                (uint8_t)0, 
+                                                interface->metric));
+            } else {
+                links.emplace_back(RouterLSALink(interface->ip, 
+                                                interface->network_mask, 
+                                                (uint8_t)STUB, 
+                                                (uint8_t)0, 
+                                                interface->metric));
+            }
+        }
+
+        if (interface->state == WAITING) {
+            links.emplace_back(RouterLSALink(interface->ip, 
+                                            interface->network_mask, 
+                                            (uint8_t)STUB, 
+                                            (uint8_t)0, 
+                                            interface->metric));
+        }
+    }
+    uint16_t length = sizeof(RouterLSA) + links.size() * sizeof(RouterLSALink);
+    RouterLSA *router_lsa = (RouterLSA*)malloc(length);
+    memset(router_lsa, 0, length);
+    router_lsa->link_num = links.size();
+    for (int i = 0; i < links.size(); i++) {
+        router_lsa->links[i] = links[i];
+    }
+    ((LSAHeader*)router_lsa)->fill(ROUTER, router::router_id, router::lsa_db.get_seq_num(), length);
+    return router_lsa;
+}
+
+void RouterLSA::hton() {
+    for (int i = 0; i < this->link_num; i++) {
+        this->links[i].metric = htons(this->links[i].metric);
+    }
+    this->link_num= htons(this->link_num);
+}
+
+void RouterLSA::ntoh() {
+    for (int i = 0; i < this->link_num; i++) {
+        this->links[i].metric = ntohs(this->links[i].metric);
+    }
+    this->link_num = ntohs(this->link_num);
 }

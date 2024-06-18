@@ -28,11 +28,11 @@ void OSPFHeader::show() {
     printf("Area Id: %s\n", ip_to_string(area_id));
 }
 
-void OSPFHeader::generate(OSPFPacketType type, uint32_t router_id, uint32_t area_id, uint16_t packet_length) {
+void OSPFHeader::fill(OSPFPacketType type, uint32_t area_id, uint16_t packet_length) {
     this->version            = 2;  // OSPF 版本号
     this->type               = type;     // 报文类型 1 为 hello
     this->packet_length      = htons(packet_length);
-    this->router_id          = router_id;  // 路由器 ID
+    this->router_id          = router::router_id;  // 路由器 ID
     this->area_id            = area_id; 
     this->checksum           = 0; // 校验和，后面再计算
     this->authType           = 0; // 认证类型，假定为 0
@@ -62,7 +62,7 @@ void OSPFHello::show() {
     printf("\n");
 }
 
-void OSPFHello::generate(Interface *interface) {
+void OSPFHello::fill(Interface *interface) {
     // 填充 OSPFHello 特定字段
     this->network_mask              = interface->network_mask;
     this->hello_interval            = htons(interface->hello_interval); // 转换为网络字节序
@@ -77,7 +77,7 @@ void OSPFHello::generate(Interface *interface) {
     for (int i = 0; i < neighbor_count; ++i) {
         this->neighbors[i] = interface->neighbors[i]->router_id;
     }
-    ((OSPFHeader*)this)->generate(OSPFPacketType::HELLO, interface->router_id, interface->area_id, sizeof(OSPFHello) + neighbor_count * 4);
+    ((OSPFHeader*)this)->fill(OSPFPacketType::HELLO, interface->area_id, sizeof(OSPFHello) + neighbor_count * 4);
 }
 
 int OSPFHello::get_neighbor_num() {
@@ -107,7 +107,7 @@ int OSPFDD::get_lsa_num() {
     return (ntohs(this->header.packet_length) - sizeof(OSPFDD)) / sizeof(LSAHeader);
 }
 
-void OSPFDD::generate(Neighbor *neighbor) {
+void OSPFDD::fill(Neighbor *neighbor) {
     this->interface_mtu      = htons(router::config::MTU);   // 接口MTU
     this->options            = router::config::options;
     this->b_MS               = neighbor->b_MS;
@@ -125,7 +125,7 @@ void OSPFDD::generate(Neighbor *neighbor) {
     } 
     this->b_M                = neighbor->dd_has_more_lsa();
     
-    ((OSPFHeader*)this)->generate(OSPFPacketType::DD, interface->router_id, interface->area_id, sizeof(OSPFDD) + header_num * sizeof(LSAHeader));
+    ((OSPFHeader*)this)->fill(OSPFPacketType::DD, interface->area_id, sizeof(OSPFDD) + header_num * sizeof(LSAHeader));
 }
 
 

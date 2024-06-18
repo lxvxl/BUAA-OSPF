@@ -3,6 +3,8 @@
 #include "../../include/global_settings/common.h"
 #include "../../include/global_settings/router.h"
 #include "../../include/neighbor/neighbor.h"
+#include "../../include/global_settings/router.h"
+
 #include <functional>
 
 void recv_thread_runner(Interface *interface);
@@ -84,7 +86,7 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
         printf("不匹配的hello报文");
     }
 
-    Neighbor *neighbor = interface->get_neighbor(hello_packet->header.router_id);
+    Neighbor *neighbor = interface->get_neighbor_by_id(hello_packet->header.router_id);
     if (neighbor == NULL) {
         neighbor = new Neighbor(hello_packet, interface, saddr);
         interface->neighbors.push_back(neighbor);
@@ -92,7 +94,7 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
     neighbor->event_hello_received();
 
     //若邻居的hello包中有自己
-    if (neighbor->state == NeighborState::INIT && hello_packet->has_neighbor(interface->router_id)) {
+    if (neighbor->state == NeighborState::INIT && hello_packet->has_neighbor(router::router_id)) {
         neighbor->event_2way_received(interface);
     }
     //查看是否需要选举dr和bdr
@@ -107,7 +109,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
     //}
     // 在此处理DD报文
     printf("dd!\n");
-    Neighbor *neighbor = interface->get_neighbor(dd_packet->header.router_id);
+    Neighbor *neighbor = interface->get_neighbor_by_id(dd_packet->header.router_id);
     OSPFDD *last_dd = neighbor->dd_last_recv;
     uint32_t packet_dd_seq_num = ntohl(dd_packet->dd_sequence_number);
     switch (neighbor->state) {
@@ -136,7 +138,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 return;
             }
             //确定主从
-            if (ntohl(dd_packet->header.router_id) > ntohl(interface->router_id)) {
+            if (ntohl(dd_packet->header.router_id) > ntohl(router::router_id)) {
                 neighbor->b_MS = 0;
                 neighbor->dd_sequence_number = ntohl(dd_packet->dd_sequence_number);
                 neighbor->b_I = 0;
@@ -173,8 +175,9 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             }
             //添加没有的LSA
             for (int i = 0; i < dd_packet->get_lsa_num(); i++) {
-                if (!interface->db->has_lsa(dd_packet->lsa_headers + i)) {
-                    LSAHeader *req_header = new LSAHeader();
+                dd_packet->lsa_headers[i].ntoh();
+                if (!router::lsa_db.has_lsa(dd_packet->lsa_headers + i)) {
+                    LSAHeader *req_header = new LSAHeader;
                     *req_header = dd_packet->lsa_headers[i];
                     neighbor->req_lsas.push_back(req_header);
                 }

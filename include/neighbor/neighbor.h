@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include <arpa/inet.h>
 #include "../packet/packets.h"
-#include "../packet/lsa.h"
 #include "../interface/interface.h"
 #include <vector>
 
@@ -47,10 +46,10 @@ struct Neighbor {
 
     OSPFDD*         dd_last_recv;
     OSPFDD*         dd_last_send;
-    size_t          dd_recorder;
-    std::vector<LSAHeader*> dd_lsa_headers;
+    size_t          dd_recorder;            //dd交换期间，下一个将要发送的header位置
+    std::vector<LSAHeader*> dd_lsa_headers; //dd交换期间，将要发送的lsa header列表
 
-    std::vector<LSAHeader*> req_lsas;
+    std::vector<LSAHeader*> req_lsas;       //dd交换期间，发现缺失的lsa
 
     Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip);
     Neighbor();

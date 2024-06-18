@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <netinet/ip.h>
-#include "lsa.h"
 #include "../interface/interface.h"
 
 enum OSPFPacketType {
@@ -14,6 +13,18 @@ enum OSPFPacketType {
     LSU,
     LSA,
     ERROR
+};
+
+enum LSType {
+    ROUTER = 1,
+    NETWORK,
+};
+
+enum LSALinkType {
+    P2P = 1,
+    TRAN,
+    STUB,
+    VIRTUAL,
 };
 
 struct Interface;
@@ -26,11 +37,21 @@ struct LSAHeader {
     uint8_t     ls_type;               // LSA类型
     uint32_t    link_state_id;         // LSA标识符
     uint32_t    advertising_router;    // 发布该LSA的路由器ID
-    uint32_t    ls_sequence_number;    // LSA序列号
+    uint32_t    ls_seq_num;            // LSA序列号
     uint16_t    ls_checksum;           // 校验和
     uint16_t    length;                // LSA总长度
 
-    bool operator==(LSAHeader &another);
+    enum Relation {
+        SAME,
+        NOT_SAME,
+        NEWER,
+        OLDER,
+    };
+    Relation compare(LSAHeader *another);
+
+    void fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length);
+    void hton();
+    void ntoh();
 };
 
 struct RouterLSALink {
@@ -39,6 +60,7 @@ struct RouterLSALink {
     uint8_t     type;
     uint8_t     tos_num;
     uint16_t    metric;
+    RouterLSALink(uint32_t link_id, uint32_t link_data, uint8_t type, uint8_t tos_num, uint16_t metric);
 };
 
 struct RouterLSA {
@@ -51,6 +73,11 @@ struct RouterLSA {
     uint8_t     padding_r = 0;
     uint16_t    link_num;
     RouterLSALink links[];
+
+    void hton();
+    void ntoh();
+
+    static RouterLSA* generate();
 };
 
 struct NetworkLSA {
@@ -72,7 +99,7 @@ struct OSPFHeader {
     uint16_t    authType;         // 认证类型
     uint32_t    authentication[2];
     void        show();
-    void        generate(OSPFPacketType type, uint32_t router_id, uint32_t area_id, uint16_t packet_length);
+    void        fill(OSPFPacketType type, uint32_t area_id, uint16_t packet_length);
 };
 
 struct OSPFHello {
@@ -89,7 +116,7 @@ struct OSPFHello {
     void        show();
     int         get_neighbor_num();
     bool        has_neighbor(uint32_t router_id);
-    void        generate(Interface *interface);
+    void        fill(Interface *interface);
 };
 
 struct OSPFDD {
@@ -106,7 +133,7 @@ struct OSPFDD {
 
     void        show();
     int         get_lsa_num();
-    void        generate(Neighbor *neighbor);
+    void        fill(Neighbor *neighbor);
 };
 
 struct OSPFLSR {

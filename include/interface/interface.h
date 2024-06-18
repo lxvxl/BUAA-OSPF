@@ -28,7 +28,6 @@ struct Interface {
     const char* name;
     std::thread recv_thread;
     std::thread send_thread;
-    LSADatabase *db;
 
     InterfaceState state                    = InterfaceState::DOWN;
     uint8_t     rtr_priority                = 1; 
@@ -39,11 +38,11 @@ struct Interface {
     uint32_t    dead_interval               = 40;
     uint32_t    designated_route            = 0; // 这里用的是网络字节序
     uint32_t    backup_designated_router    = 0;     
-    uint32_t    router_id                   = inet_addr("2.2.2.2");
     uint32_t    dr                          = inet_addr("0.0.0.0");
     uint32_t    bdr                         = inet_addr("0.0.0.0");
     uint32_t    interface_output_cost       = 0;
     uint32_t    rxmt_interval               = 10;
+    uint16_t    metric                      = 1;
 
     uint32_t    wait_timer                  = -1;//使接口退出waiting状态的单击计时器
     uint32_t    hello_timer                 = -1;
@@ -67,7 +66,8 @@ struct Interface {
     void        event_unloop_ind();
     void        event_interface_down();
 
-    Neighbor*   get_neighbor(uint32_t router_id);
+    Neighbor*   get_neighbor_by_id(uint32_t router_id);
+    Neighbor*   get_neighbor_by_ip(uint32_t ip);
     void        send_thread_runner();
     void        send_hello_packet();
     void        send_dd_packet(Neighbor *neighbor);
