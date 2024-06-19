@@ -129,24 +129,60 @@ void OSPFDD::fill(Neighbor *neighbor) {
 }
 
 
-void OSPFLSR::show() {
-    header.show();
-    printf("LS Type: %d\n", ntohl(ls_type)); // 转换为主机字节序
-    printf("Link State ID: %d\n", ntohl(link_state_id)); // 转换为主机字节序
-    printf("Advertising Router: %d\n", ntohl(advertising_router)); // 转换为主机字节序
+//void OSPFLSR::show() {
+//    header.show();
+//    printf("LS Type: %d\n", ntohl(ls_type)); // 转换为主机字节序
+//    printf("Link State ID: %d\n", ntohl(link_state_id)); // 转换为主机字节序
+//    printf("Advertising Router: %d\n", ntohl(advertising_router)); // 转换为主机字节序
+//}
+void OSPFLSR::fill(std::vector<LSAHeader*>& headers, Interface *interface) {
+    size_t req_num = headers.size();
+    for (int i = 0; i < req_num; i++) {
+        this->reqs[i].ls_type            = htonl((uint32_t)headers[i]->ls_type);
+        this->reqs[i].link_state_id      = headers[i]->link_state_id;
+        this->reqs[i].advertising_router = headers[i]->advertising_router;
+    }
+    ((OSPFHeader*)this)->fill(OSPFPacketType::LSR, interface->area_id, sizeof(OSPFLSR) + req_num * sizeof(ReqItem));
 }
+
+int OSPFLSR::get_req_num() {
+    return (ntohs(this->header.packet_length) - sizeof(OSPFLSR)) / sizeof(ReqItem);
+}
+
 
 void OSPFLSU::show() {
     header.show();
-    printf("Number of LSAs: %d\n", ntohl(num_lsas)); // 转换为主机字节序
+    printf("Number of LSAs: %d\n", ntohl(lsa_num)); // 转换为主机字节序
 }
 
-void OSPFLSAck::show() {
-    header.show();
-    printf("LS Type: %d\n", ntohl(ls_type)); // 转换为主机字节序
-    printf("Link State ID: %d\n", ntohl(link_state_id)); // 转换为主机字节序
-    printf("Advertising Router: %d\n", ntohl(advertising_router)); // 转换为主机字节序
-    printf("LS Sequence Number: %d\n", ntohl(ls_sequence_number)); // 转换为主机字节序
-    printf("LS Age: %d\n", ntohs(ls_age)); // 转换为主机字节序
-    printf("Checksum: %d\n", ntohs(checksum)); // 转换为主机字节序
+void OSPFLSU::fill(std::vector<LSAHeader*>& lsas, Interface *interface) {
+    uint32_t lsa_num = lsas.size();
+    uint8_t  *lsa_p = (uint8_t*)this + sizeof(OSPFLSU); 
+    this->lsa_num = htonl(lsa_num);
+    for (auto lsa : lsas) {
+        memcpy(lsa_p, lsa, lsa->length);
+        switch(lsa->ls_type) {
+            case ROUTER:
+                ((RouterLSA*)lsa_p)->hton();
+                break;
+            case NETWORK:
+                ((NetworkLSA*)lsa_p)->hton();
+                break;
+        }
+        lsa_p += lsa->length;
+    }
+    ((OSPFHeader*)this)->fill(OSPFPacketType::LSU, interface->area_id, lsa_p - (uint8_t*)this);
+}
+
+void OSPFLSAck::fill(std::vector<LSAHeader*>& lsas, Interface *interface) {
+    uint32_t lsa_num = lsas.size();
+    for (int i = 0; i < lsa_num; i++) {
+        this->lsa_headers[i] = *lsas[i];
+        this->lsa_headers[i].hton();
+    }
+    ((OSPFHeader*)this)->fill(OSPFPacketType::LSA, interface->area_id, sizeof(OSPFLSAck) + lsa_num * sizeof(LSAHeader));
+}
+
+int OSPFLSAck::get_lsa_num() {
+    return (ntohs(this->header.packet_length) - sizeof(OSPFLSAck)) / sizeof(LSAHeader);
 }

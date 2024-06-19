@@ -85,6 +85,8 @@ struct NetworkLSA {
     // 以下是特定于Network-LSA的数据
     uint32_t network_mask;
     uint32_t attached_routers[];
+    void hton();
+    void ntoh();
 };
 
 
@@ -137,30 +139,30 @@ struct OSPFDD {
 };
 
 struct OSPFLSR {
-    struct OSPFHeader header;
-    uint32_t ls_type;       // 链路状态类型
-    uint32_t link_state_id; // 链路状态ID
-    uint32_t advertising_router; // 广告路由器
-    void show();
+    struct ReqItem {
+        uint32_t ls_type;       // 链路状态类型
+        uint32_t link_state_id; // 链路状态ID
+        uint32_t advertising_router; // 广告路由器
+    };
+    OSPFHeader  header; 
+    ReqItem     reqs[];
+    void        fill(std::vector<LSAHeader*>& headers, Interface *interface);
+    int         get_req_num();
 };
 
 struct OSPFLSU {
     struct OSPFHeader header;
-    uint32_t num_lsas; // LSA数量
+    uint32_t lsa_num; // LSA数量
     // 此处可以包含LSA的列表
     void show();
+    void fill(std::vector<LSAHeader*>& lsas, Interface *interface);
 };
 
 struct OSPFLSAck {
     struct OSPFHeader header;
-    uint32_t ls_type;       // 链路状态类型
-    uint32_t link_state_id; // 链路状态ID
-    uint32_t advertising_router; // 广告路由器
-    uint32_t ls_sequence_number; // 链路状态序列号
-    uint16_t ls_age;       // 链路状态年龄
-    uint16_t checksum;     // 校验和
-    // 其他可能的LSA字段
-    void show();
+    LSAHeader       lsa_headers[];
+    void fill(std::vector<LSAHeader*>& lsas, Interface *interface);
+    int             get_lsa_num();
 };
 
 

@@ -20,22 +20,40 @@ void Interface::send_thread_runner() {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         this->hello_timer--;
         this->wait_timer--;
+
         if (this->hello_timer == 0) {
             this->hello_timer = 10;
             this->send_hello_packet();
         }
+
         if (this->wait_timer == 0 && this->state == InterfaceState::WAITING) {
             this->event_wait_timer();
         }
+
         for (auto neighbor : this->neighbors) {
             neighbor->inactivity_timer--;
             if (neighbor->inactivity_timer == 0) {
                 neighbor->event_kill_nbr();
             }
 
-            neighbor->rxmt_timer--;
-            if (neighbor->rxmt_timer == 0) {
+            //查看dd报文重发
+            neighbor->dd_retransmit_timer--;
+            if (neighbor->dd_retransmit_timer == 0) {
                 this->send_last_dd_packet(neighbor);
+            }
+
+            //查看LSR报文重传
+            neighbor->lsr_retransmit_timer--;
+            if (neighbor->lsr_retransmit_timer == 0 && !neighbor->req_lsas.empty()) {
+                this->send_lsr_packet(neighbor);
+            }
+
+            //查看LSU报文重传
+            neighbor->lsu_retransmit_manager.step_one();
+            std::vector<LSAHeader*> retransmit_lsas;
+            neighbor->lsu_retransmit_manager.get_retransmit_lsas(retransmit_lsas);
+            if (!retransmit_lsas.empty()) {
+                send_lsu_packet(retransmit_lsas, neighbor->ip);
             }
         }
     }
@@ -72,7 +90,7 @@ void Interface::send_dd_packet(Neighbor *neighbor) {
     } 
     memcpy(neighbor->dd_last_send, this->send_buffer, 2048);
     if (neighbor->is_master) {
-        neighbor->rxmt_timer = 10;
+        neighbor->dd_retransmit_timer = 10;
     }
 }
 
@@ -89,7 +107,65 @@ void Interface::send_last_dd_packet(Neighbor *neighbor) {
         perror("[Thread]SendHelloPacket: sendto");
     } 
     if (neighbor->is_master) {
-        neighbor->rxmt_timer = 10;
+        neighbor->dd_retransmit_timer = 10;
+    }
+}
+
+void Interface::send_lsr_packet(Neighbor *neighbor) {
+    struct sockaddr_in dst_sockaddr;
+    memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
+    dst_sockaddr.sin_family = AF_INET;
+    dst_sockaddr.sin_addr.s_addr = neighbor->ip;
+
+    ((OSPFLSR*)this->send_buffer)->fill(neighbor->req_lsas, this);
+    if (sendto(this->send_socket_fd, 
+               this->send_buffer, 
+               ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 
+               0, 
+               (struct sockaddr*)&dst_sockaddr, 
+               sizeof(dst_sockaddr)) < 0) {
+        perror("[Thread]Send: sendto");
+    } 
+}
+
+
+void Interface::send_lsu_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr) {
+    struct sockaddr_in dst_sockaddr;
+    memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
+    dst_sockaddr.sin_family = AF_INET;
+    dst_sockaddr.sin_addr.s_addr = dst_addr;
+
+    ((OSPFLSU*)this->send_buffer)->fill(lsas, this);
+    if (sendto(this->send_socket_fd, 
+               this->send_buffer, 
+               ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 
+               0, 
+               (struct sockaddr*)&dst_sockaddr, 
+               sizeof(dst_sockaddr)) < 0) {
+        perror("[Thread]Send: sendto");
+    } 
+    if (dst_addr != inet_addr("224.0.0.5")) {
+        Neighbor *neighbor = this->get_neighbor_by_ip(dst_addr);
+        for (auto lsa : lsas) {
+            neighbor->lsu_retransmit_manager.add_lsa(lsa);
+        }
+    }
+}
+
+void Interface::send_lsack_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr) {
+    struct sockaddr_in dst_sockaddr;
+    memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
+    dst_sockaddr.sin_family = AF_INET;
+    dst_sockaddr.sin_addr.s_addr = dst_addr;
+
+    ((OSPFLSAck*)this->send_buffer)->fill(lsas, this);
+    if (sendto(this->send_socket_fd, 
+               this->send_buffer, 
+               ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 
+               0, 
+               (struct sockaddr*)&dst_sockaddr, 
+               sizeof(dst_sockaddr)) < 0) {
+        perror("[Thread]Send: sendto");
     }
 }
 

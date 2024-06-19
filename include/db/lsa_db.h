@@ -13,9 +13,8 @@ struct NetworkLSA;
 struct LSAHeader;
 
 struct LSADatabase {
-    NetworkLSA              *network_lsa    = NULL;
-    RouterLSA               *my_router_lsa;
-    std::vector<RouterLSA*> router_lsas;
+    std::vector<RouterLSA*>     router_lsas;
+    std::vector<NetworkLSA*>    network_lsas;
     uint32_t                seq_num         = 0x80000001;
 
     LSADatabase();
@@ -25,6 +24,9 @@ struct LSADatabase {
     uint32_t                get_seq_num();
     //将vector清空，并获得所有LSA的引用
     void                    get_all_lsa(std::vector<LSAHeader*> *vec);
+    //获取指定的LSA，注意都是主机序
+    LSAHeader*              get_lsa(uint8_t ls_type, uint32_t link_state_id, uint32_t advertising_router);
+    void                    update(LSAHeader *lsa);
 };
 
 #endif 

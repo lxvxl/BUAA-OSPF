@@ -7,6 +7,7 @@
 #include "../packet/packets.h"
 #include "../interface/interface.h"
 #include <vector>
+#include <map>
 
 struct Interface;
 struct OSPFDD;
@@ -32,14 +33,16 @@ struct Neighbor {
     uint8_t         priority;
     uint32_t        ip;
     bool            is_master;
-    uint32_t        inactivity_timer    = -1;
-    uint32_t        rxmt_timer          = -1;
+    uint32_t        inactivity_timer        = -1;
+    uint32_t        dd_retransmit_timer     = -1;
+    uint32_t        lsr_retransmit_timer    = -1;
+
     uint32_t        dd_sequence_number; // DD序列号
 
 
-    uint8_t         b_MS: 1             ;
-    uint8_t         b_M : 1             ;
-    uint8_t         b_I : 1             ;
+    uint8_t         b_MS: 1;
+    uint8_t         b_M : 1;
+    uint8_t         b_I : 1;
     uint8_t         b_other: 5;
 
     Interface*      interface;
@@ -49,7 +52,15 @@ struct Neighbor {
     size_t          dd_recorder;            //dd交换期间，下一个将要发送的header位置
     std::vector<LSAHeader*> dd_lsa_headers; //dd交换期间，将要发送的lsa header列表
 
-    std::vector<LSAHeader*> req_lsas;       //dd交换期间，发现缺失的lsa
+    std::vector<LSAHeader*> req_lsas;       //需要请求的LSA
+
+    struct LSURetransmitManager {
+        std::map<LSAHeader*, int> timer;
+        void step_one();
+        void get_retransmit_lsas(std::vector<LSAHeader*>& lsas);
+        void remove_lsa(LSAHeader* lsa);
+        void add_lsa(LSAHeader* lsa);
+    } lsu_retransmit_manager;
 
     Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip);
     Neighbor();

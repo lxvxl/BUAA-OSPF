@@ -10,9 +10,9 @@
 void recv_thread_runner(Interface *interface);
 void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t saddr);
 void handle_recv_dd(OSPFDD *dd_packet, Interface *interface);
-void handle_recv_lsr(OSPFLSR *lsr_packet);
-void handle_recv_lsu(OSPFLSU *lsu_packet);
-void handle_recv_lsa(OSPFLSAck *lsa_packet);
+void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface);
+void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr);
+void handle_recv_lsack(OSPFLSAck *lsa_packet, Interface *interface);
 
 
 void Interface::recv_thread_runner() {
@@ -62,13 +62,13 @@ void Interface::recv_thread_runner() {
                 handle_recv_dd((struct OSPFDD*)ospf_header, this);
                 break;
             case OSPFPacketType::LSR:
-                handle_recv_lsr((struct OSPFLSR*)ospf_header);
+                handle_recv_lsr((struct OSPFLSR*)ospf_header, this);
                 break;
             case OSPFPacketType::LSU:
-                handle_recv_lsu((struct OSPFLSU*)ospf_header);
+                handle_recv_lsu((struct OSPFLSU*)ospf_header, this, saddr);
                 break;
             case OSPFPacketType::LSA:
-                handle_recv_lsa((struct OSPFLSAck*)ospf_header);
+                handle_recv_lsack((struct OSPFLSAck*)ospf_header, this);
                 break;
             default:
                 printf("Error: illegal type");
@@ -142,11 +142,11 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 neighbor->b_MS = 0;
                 neighbor->dd_sequence_number = ntohl(dd_packet->dd_sequence_number);
                 neighbor->b_I = 0;
-                neighbor->rxmt_timer = -1;
+                neighbor->dd_retransmit_timer = -1;
+                interface->send_dd_packet(neighbor);
             } else {
                 neighbor->b_MS = 1;
                 neighbor->b_I = 0;
-                interface->send_dd_packet(neighbor);
             }
             neighbor->event_negotiation_done();
             break;
@@ -203,17 +203,63 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
     }
 }
 
-void handle_recv_lsr(OSPFLSR *lsr_packet) {
+void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface) {
+    std::vector<LSAHeader*> req_lsas;
+    Neighbor *neighbor = interface->get_neighbor_by_id(lsr_packet->header.router_id);
+    for (int i = 0; i < lsr_packet->get_req_num(); i++) {
+        LSAHeader *lsa = router::lsa_db.get_lsa(ntohl(lsr_packet->reqs[i].ls_type), 
+                                                lsr_packet->reqs[i].link_state_id, 
+                                                lsr_packet->reqs[i].advertising_router);
+        if (lsa == NULL) {
+            neighbor->event_bad_lsreq();
+            return;
+        }
+        req_lsas.push_back(lsa);
+    }
+    interface->send_lsu_packet(req_lsas, neighbor->ip);
+    
     // 在此处理LSR报文
-    lsr_packet->show();
+    //lsr_packet->show();
 }
 
-void handle_recv_lsu(OSPFLSU *lsu_packet) {
+void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr) {
     // 在此处理LSU报文
-    lsu_packet->show();
+    LSAHeader *next_lsa = (LSAHeader*)((uint8_t*)lsu_packet + sizeof(OSPFLSU));
+    std::vector<LSAHeader*> received_lsas;
+    for (int i = 0; i < ntohl(lsu_packet->lsa_num); i++) {
+        //清除待请求的lsa
+        for (auto neighbor : interface->neighbors) {
+            for (int i = neighbor->req_lsas.size() - 1; i >= 0; i--) {
+                LSAHeader::Relation rel = neighbor->req_lsas[i]->compare(next_lsa);
+                if (rel == LSAHeader::OLDER || rel == LSAHeader::SAME) {
+                    neighbor->req_lsas.erase(neighbor->req_lsas.begin() + i);
+                }
+            }
+        }
+        received_lsas.push_back(next_lsa);
+        //更新数据库，跳转到下一条lsa
+        switch (next_lsa->ls_type) {
+            case LSType::ROUTER:
+                ((RouterLSA*)next_lsa)->ntoh();
+                router::lsa_db.update(next_lsa);
+                next_lsa = (LSAHeader*)((uint8_t*)next_lsa + next_lsa->length);
+                break;
+            case LSType::NETWORK:
+                ((NetworkLSA*)next_lsa)->ntoh();
+                router::lsa_db.update(next_lsa);
+                next_lsa = (LSAHeader*)((uint8_t*)next_lsa + next_lsa->length);
+                break;
+            default:
+                break;
+        }
+    }
+    interface->send_lsack_packet(received_lsas, saddr);
 }
 
-void handle_recv_lsa(OSPFLSAck *lsa_packet) {
-    // 在此处理LSA报文
-    lsa_packet->show();
+void handle_recv_lsack(OSPFLSAck *lsack_packet, Interface *interface) {
+    Neighbor *neighbor = interface->get_neighbor_by_id(lsack_packet->header.router_id);
+    for (int i = 0; i < lsack_packet->get_lsa_num(); i++) {
+        lsack_packet->lsa_headers[i].ntoh();
+        neighbor->lsu_retransmit_manager.remove_lsa(&lsack_packet->lsa_headers[i]);
+    }
 }

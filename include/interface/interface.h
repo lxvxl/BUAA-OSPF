@@ -69,10 +69,18 @@ struct Interface {
     Neighbor*   get_neighbor_by_id(uint32_t router_id);
     Neighbor*   get_neighbor_by_ip(uint32_t ip);
     void        send_thread_runner();
+
     void        send_hello_packet();
     void        send_dd_packet(Neighbor *neighbor);
     void        send_last_dd_packet(Neighbor *neighbor);
+    void        send_lsr_packet(Neighbor *neighbor);
+    void        send_lsu_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr);
+    void        send_lsack_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr);
+
     void        elect_dr();
     void        recv_thread_runner();
+
+    //清除失效的LSA
+    void        clear_invalid_req(LSAHeader *old_lsa, LSAHeader *new_lsa);
 };
 #endif 

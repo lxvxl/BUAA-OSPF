@@ -79,14 +79,25 @@ void Neighbor::event_exchange_done() {
     logger::event_log(this, "exchange done");
     mark_state
 
-    this->rxmt_timer = -1;
-    this->state      = this->req_lsas.size() == 0 ? FULL : LOADING;
+    this->dd_retransmit_timer = -1;
+    if (this->req_lsas.size() == 0) {
+        this->state = FULL;
+        this->lsr_retransmit_timer = -1;
+    } else {
+        this->state = LOADING;
+        this->lsr_retransmit_timer = 1;
+    }
 
     print_state_log
 }   
 
 void Neighbor::event_bad_lsreq() {
+    logger::event_log(this, "bad lsreq");
+    mark_state
+    this->state     = EXSTART;
 
+
+    print_state_log
 }   
 
 void Neighbor::event_loading_done() {
@@ -155,4 +166,29 @@ bool Neighbor::dd_has_more_lsa() {
     return dd_recorder < dd_lsa_headers.size();
 }
 
+void Neighbor::LSURetransmitManager::step_one() {
+    for (auto it = timer.begin(); it != timer.end(); ++it) {
+        it->second--;
+    }
+}
 
+void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>& lsas) {
+    for (auto& pair : timer) {
+        if (pair.second <= 0) {
+            lsas.push_back(pair.first);
+            pair.second = 5;
+        }
+    }
+}
+
+void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* lsa) {
+    for (auto it = timer.begin(); it != timer.end(); ++it) {
+        if (it->first->compare(lsa) == LSAHeader::SAME || it->first->compare(lsa) == LSAHeader::OLDER) {
+            timer.erase(it);
+        }
+    }
+}
+
+void Neighbor::LSURetransmitManager::add_lsa(LSAHeader* lsa) {
+    timer[lsa] = 5;
+}

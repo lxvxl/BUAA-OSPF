@@ -51,6 +51,7 @@ void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, u
 }
 
 void LSAHeader::hton() {
+    this->ls_age      = htons(this->ls_age);
     this->ls_seq_num  = htonl(this->ls_seq_num);
     this->length      = htons(this->length);
     this->ls_checksum = htonl(this->ls_checksum);
@@ -58,6 +59,7 @@ void LSAHeader::hton() {
 
 
 void LSAHeader::ntoh() {
+    this->ls_age      = ntohs(this->ls_age);
     this->ls_seq_num  = ntohl(this->ls_seq_num);
     this->length      = ntohs(this->length);
     this->ls_checksum = ntohl(this->ls_checksum);
@@ -136,6 +138,7 @@ void RouterLSA::hton() {
         this->links[i].metric = htons(this->links[i].metric);
     }
     this->link_num= htons(this->link_num);
+    this->header.hton();
 }
 
 void RouterLSA::ntoh() {
@@ -143,4 +146,16 @@ void RouterLSA::ntoh() {
         this->links[i].metric = ntohs(this->links[i].metric);
     }
     this->link_num = ntohs(this->link_num);
+    this->header.ntoh();
 }
+
+void NetworkLSA::hton() {
+    this->header.hton();
+}
+
+void NetworkLSA::ntoh() {
+    this->header.ntoh();
+}
+
+
+
