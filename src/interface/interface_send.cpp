@@ -44,16 +44,16 @@ void Interface::send_thread_runner() {
 
             //查看LSR报文重传
             neighbor->lsr_retransmit_timer--;
-            if (neighbor->lsr_retransmit_timer == 0 && !neighbor->req_lsas.empty()) {
+            if (neighbor->lsr_retransmit_timer == 0 && !neighbor->req_v_lsas.empty()) {
                 this->send_lsr_packet(neighbor);
             }
 
             //查看LSU报文重传
             neighbor->lsu_retransmit_manager.step_one();
-            std::vector<LSAHeader*> retransmit_lsas;
-            neighbor->lsu_retransmit_manager.get_retransmit_lsas(retransmit_lsas);
-            if (!retransmit_lsas.empty()) {
-                send_lsu_packet(retransmit_lsas, neighbor->ip);
+            std::vector<LSAHeader*> retransmit_r_lsas;
+            neighbor->lsu_retransmit_manager.get_retransmit_lsas(retransmit_r_lsas);
+            if (!retransmit_r_lsas.empty()) {
+                send_lsu_packet(retransmit_r_lsas, neighbor->ip);
             }
         }
     }
@@ -117,7 +117,7 @@ void Interface::send_lsr_packet(Neighbor *neighbor) {
     dst_sockaddr.sin_family = AF_INET;
     dst_sockaddr.sin_addr.s_addr = neighbor->ip;
 
-    ((OSPFLSR*)this->send_buffer)->fill(neighbor->req_lsas, this);
+    ((OSPFLSR*)this->send_buffer)->fill(neighbor->req_v_lsas, this);
     if (sendto(this->send_socket_fd, 
                this->send_buffer, 
                ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 
@@ -129,13 +129,13 @@ void Interface::send_lsr_packet(Neighbor *neighbor) {
 }
 
 
-void Interface::send_lsu_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr) {
+void Interface::send_lsu_packet(std::vector<LSAHeader*>& r_lsas, uint32_t dst_addr) {
     struct sockaddr_in dst_sockaddr;
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
     dst_sockaddr.sin_family = AF_INET;
     dst_sockaddr.sin_addr.s_addr = dst_addr;
 
-    ((OSPFLSU*)this->send_buffer)->fill(lsas, this);
+    ((OSPFLSU*)this->send_buffer)->fill(r_lsas, this);
     if (sendto(this->send_socket_fd, 
                this->send_buffer, 
                ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 
@@ -146,19 +146,19 @@ void Interface::send_lsu_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr
     } 
     if (dst_addr != inet_addr("224.0.0.5")) {
         Neighbor *neighbor = this->get_neighbor_by_ip(dst_addr);
-        for (auto lsa : lsas) {
+        for (auto lsa : r_lsas) {
             neighbor->lsu_retransmit_manager.add_lsa(lsa);
         }
     }
 }
 
-void Interface::send_lsack_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr) {
+void Interface::send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_addr) {
     struct sockaddr_in dst_sockaddr;
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
     dst_sockaddr.sin_family = AF_INET;
     dst_sockaddr.sin_addr.s_addr = dst_addr;
 
-    ((OSPFLSAck*)this->send_buffer)->fill(lsas, this);
+    ((OSPFLSAck*)this->send_buffer)->fill(v_lsas, this);
     if (sendto(this->send_socket_fd, 
                this->send_buffer, 
                ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 

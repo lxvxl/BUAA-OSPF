@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <netinet/ip.h>
 #include "../interface/interface.h"
+#include <vector>
 
 enum OSPFPacketType {
     HELLO = 1,
@@ -155,13 +156,13 @@ struct OSPFLSU {
     uint32_t lsa_num; // LSA数量
     // 此处可以包含LSA的列表
     void show();
-    void fill(std::vector<LSAHeader*>& lsas, Interface *interface);
+    void fill(std::vector<LSAHeader*>& r_lsas, Interface *interface);
 };
 
 struct OSPFLSAck {
     struct OSPFHeader header;
     LSAHeader       lsa_headers[];
-    void fill(std::vector<LSAHeader*>& lsas, Interface *interface);
+    void fill(std::vector<LSAHeader*>& v_lsas, Interface *interface);
     int             get_lsa_num();
 };
 

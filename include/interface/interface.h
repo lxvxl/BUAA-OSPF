@@ -74,13 +74,13 @@ struct Interface {
     void        send_dd_packet(Neighbor *neighbor);
     void        send_last_dd_packet(Neighbor *neighbor);
     void        send_lsr_packet(Neighbor *neighbor);
-    void        send_lsu_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr);
-    void        send_lsack_packet(std::vector<LSAHeader*>& lsas, uint32_t dst_addr);
+    void        send_lsu_packet(std::vector<LSAHeader*>& r_lsas, uint32_t dst_addr);
+    void        send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_addr);
 
     void        elect_dr();
     void        recv_thread_runner();
 
     //清除失效的LSA
-    void        clear_invalid_req(LSAHeader *old_lsa, LSAHeader *new_lsa);
+    void        clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa);
 };
 #endif 

@@ -43,7 +43,7 @@ void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, u
     uint32_t c0 = 0;
     uint32_t c1 = 0;
 
-    for (size_t i = 0; i < length - 2; ++i) {
+    for (int i = 0; i < length - 2; ++i) {
         c0 = (c0 + data[i]) % 255;
         c1 = (c1 + c0) % 255;
     }

@@ -50,16 +50,16 @@ struct Neighbor {
     OSPFDD*         dd_last_recv;
     OSPFDD*         dd_last_send;
     size_t          dd_recorder;            //dd交换期间，下一个将要发送的header位置
-    std::vector<LSAHeader*> dd_lsa_headers; //dd交换期间，将要发送的lsa header列表
+    std::vector<LSAHeader*> dd_r_lsa_headers; //dd交换期间，将要发送的lsa header列表
 
-    std::vector<LSAHeader*> req_lsas;       //需要请求的LSA
+    std::vector<LSAHeader*> req_v_lsas;       //需要请求的LSA。这个要单独管理内存！
 
     struct LSURetransmitManager {
-        std::map<LSAHeader*, int> timer;
+        std::map<LSAHeader*, int> timer;        //r_lsa -> time
         void step_one();
-        void get_retransmit_lsas(std::vector<LSAHeader*>& lsas);
-        void remove_lsa(LSAHeader* lsa);
-        void add_lsa(LSAHeader* lsa);
+        void get_retransmit_lsas(std::vector<LSAHeader*>& r_lsas);
+        void remove_lsa(LSAHeader* v_lsa);
+        void add_lsa(LSAHeader* r_lsa);
     } lsu_retransmit_manager;
 
     Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip);
@@ -94,6 +94,6 @@ struct Neighbor {
 
     void            dd_reset_lsas();
     bool            dd_has_more_lsa();
-    int             fill_lsa_headers(LSAHeader *headers);
+    int             fill_lsa_headers(LSAHeader *addr);
 };
 #endif 

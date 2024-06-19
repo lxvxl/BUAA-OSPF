@@ -155,11 +155,11 @@ void OSPFLSU::show() {
     printf("Number of LSAs: %d\n", ntohl(lsa_num)); // 转换为主机字节序
 }
 
-void OSPFLSU::fill(std::vector<LSAHeader*>& lsas, Interface *interface) {
-    uint32_t lsa_num = lsas.size();
+void OSPFLSU::fill(std::vector<LSAHeader*>& r_lsas, Interface *interface) {
+    uint32_t lsa_num = r_lsas.size();
     uint8_t  *lsa_p = (uint8_t*)this + sizeof(OSPFLSU); 
     this->lsa_num = htonl(lsa_num);
-    for (auto lsa : lsas) {
+    for (auto lsa : r_lsas) {
         memcpy(lsa_p, lsa, lsa->length);
         switch(lsa->ls_type) {
             case ROUTER:
@@ -174,10 +174,10 @@ void OSPFLSU::fill(std::vector<LSAHeader*>& lsas, Interface *interface) {
     ((OSPFHeader*)this)->fill(OSPFPacketType::LSU, interface->area_id, lsa_p - (uint8_t*)this);
 }
 
-void OSPFLSAck::fill(std::vector<LSAHeader*>& lsas, Interface *interface) {
-    uint32_t lsa_num = lsas.size();
+void OSPFLSAck::fill(std::vector<LSAHeader*>& v_lsas, Interface *interface) {
+    uint32_t lsa_num = v_lsas.size();
     for (int i = 0; i < lsa_num; i++) {
-        this->lsa_headers[i] = *lsas[i];
+        this->lsa_headers[i] = *v_lsas[i];
         this->lsa_headers[i].hton();
     }
     ((OSPFHeader*)this)->fill(OSPFPacketType::LSA, interface->area_id, sizeof(OSPFLSAck) + lsa_num * sizeof(LSAHeader));

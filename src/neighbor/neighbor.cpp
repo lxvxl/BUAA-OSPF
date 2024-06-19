@@ -80,7 +80,7 @@ void Neighbor::event_exchange_done() {
     mark_state
 
     this->dd_retransmit_timer = -1;
-    if (this->req_lsas.size() == 0) {
+    if (this->req_v_lsas.size() == 0) {
         this->state = FULL;
         this->lsr_retransmit_timer = -1;
     } else {
@@ -148,22 +148,22 @@ void Neighbor::event_ll_down() {
 void Neighbor::dd_reset_lsas() {
     this->dd_recorder = 0;
     LSADatabase *db = &router::lsa_db;
-    db->get_all_lsa(&this->dd_lsa_headers);
-    req_lsas.clear();
+    db->get_all_lsa(this->dd_r_lsa_headers);
+    req_v_lsas.clear();
 }
 
 int Neighbor::fill_lsa_headers(LSAHeader *headers) {
     int i = 0;
     int max = (router::config::MTU - sizeof(OSPFDD)) / sizeof(LSAHeader);
-    for (;this->dd_recorder < dd_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
-        headers[i] = *dd_lsa_headers[i];
+    for (;this->dd_recorder < dd_r_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
+        headers[i] = *dd_r_lsa_headers[i];
         headers[i].hton();
     }
     return i;
 }
 
 bool Neighbor::dd_has_more_lsa() {
-    return dd_recorder < dd_lsa_headers.size();
+    return dd_recorder < dd_r_lsa_headers.size();
 }
 
 void Neighbor::LSURetransmitManager::step_one() {
@@ -172,10 +172,10 @@ void Neighbor::LSURetransmitManager::step_one() {
     }
 }
 
-void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>& lsas) {
+void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>& r_lsas) {
     for (auto& pair : timer) {
         if (pair.second <= 0) {
-            lsas.push_back(pair.first);
+            r_lsas.push_back(pair.first);
             pair.second = 5;
         }
     }
@@ -189,6 +189,6 @@ void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* lsa) {
     }
 }
 
-void Neighbor::LSURetransmitManager::add_lsa(LSAHeader* lsa) {
-    timer[lsa] = 5;
+void Neighbor::LSURetransmitManager::add_lsa(LSAHeader* r_lsa) {
+    timer[r_lsa] = 5;
 }
