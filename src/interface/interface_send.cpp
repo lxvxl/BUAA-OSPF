@@ -144,12 +144,12 @@ void Interface::send_lsu_packet(std::vector<LSAHeader*>& r_lsas, uint32_t dst_ad
                sizeof(dst_sockaddr)) < 0) {
         perror("[Thread]Send: sendto");
     } 
-    if (dst_addr != inet_addr("224.0.0.5")) {
-        Neighbor *neighbor = this->get_neighbor_by_ip(dst_addr);
-        for (auto lsa : r_lsas) {
-            neighbor->lsu_retransmit_manager.add_lsa(lsa);
-        }
-    }
+    //if (dst_addr != inet_addr("224.0.0.5")) {
+    //    Neighbor *neighbor = this->get_neighbor_by_ip(dst_addr);
+    //    for (auto lsa : r_lsas) {
+    //        neighbor->lsu_retransmit_manager.add_lsa(lsa);
+    //    }
+    //}
 }
 
 void Interface::send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_addr) {

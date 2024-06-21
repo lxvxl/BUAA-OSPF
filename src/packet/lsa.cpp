@@ -28,7 +28,7 @@ LSAHeader::Relation LSAHeader::compare(LSAHeader *another) {
 
 void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length)
 {
-    this->ls_age              = 0;                
+    this->ls_age              = 1;                
     this->options             = router::config::options;               
     this->ls_type             = type;             
     this->advertising_router  = router::router_id;    
@@ -54,7 +54,7 @@ void LSAHeader::hton() {
     this->ls_age      = htons(this->ls_age);
     this->ls_seq_num  = htonl(this->ls_seq_num);
     this->length      = htons(this->length);
-    this->ls_checksum = htonl(this->ls_checksum);
+    this->ls_checksum = htons(this->ls_checksum);
 }
 
 
@@ -62,7 +62,7 @@ void LSAHeader::ntoh() {
     this->ls_age      = ntohs(this->ls_age);
     this->ls_seq_num  = ntohl(this->ls_seq_num);
     this->length      = ntohs(this->length);
-    this->ls_checksum = ntohl(this->ls_checksum);
+    this->ls_checksum = ntohs(this->ls_checksum);
 }
 
 RouterLSALink::RouterLSALink(uint32_t link_id, uint32_t link_data, uint8_t type, uint8_t tos_num, uint16_t metric) {

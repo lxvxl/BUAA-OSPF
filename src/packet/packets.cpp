@@ -179,6 +179,7 @@ void OSPFLSAck::fill(std::vector<LSAHeader*>& v_lsas, Interface *interface) {
     for (int i = 0; i < lsa_num; i++) {
         this->lsa_headers[i] = *v_lsas[i];
         this->lsa_headers[i].hton();
+        std::cout<<this->lsa_headers[i].ls_checksum<<std::endl;
     }
     ((OSPFHeader*)this)->fill(OSPFPacketType::LSA, interface->area_id, sizeof(OSPFLSAck) + lsa_num * sizeof(LSAHeader));
 }

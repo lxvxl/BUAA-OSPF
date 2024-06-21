@@ -168,8 +168,8 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             }
             memcpy(last_dd, dd_packet, 2048);
             //检查dd序号
-            if (neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num 
-                || !neighbor->b_MS && neighbor->dd_sequence_number + 1 != packet_dd_seq_num) {
+            if (neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num + 1 
+                || !neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num) {
                 neighbor->event_seq_num_mismatch();
                 return;
             }
