@@ -15,11 +15,14 @@ struct LSAHeader;
 struct LSADatabase {
     std::vector<RouterLSA*>     router_lsas;
     std::vector<NetworkLSA*>    network_lsas;
-    uint32_t                seq_num         = 0x80000001;
+    uint32_t                    seq_num         = 0x80000001;
+    std::map<LSAHeader*, int>   protected_lsas; //保护泛洪来的lsa不会被立刻替代
+
+    std::thread                 update_thread;
 
     LSADatabase();
     //判断这个LSA是否存在
-    bool                    has_lsa(LSAHeader *v_lsa);
+    LSAHeader*             get_lsa(LSAHeader *v_lsa);
     //生成LSA的时候，获取下一个序号。
     uint32_t                get_seq_num();
     //将vector清空，并获得所有LSA的引用
@@ -27,6 +30,9 @@ struct LSADatabase {
     //获取指定的LSA，注意都是主机序
     LSAHeader*              get_lsa(uint8_t ls_type, uint32_t link_state_id, uint32_t advertising_router);
     void                    update(LSAHeader *v_lsa);
+    void                    clear_invalid_lsa(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa);
+
+    void                    db_thread_runner();
 };
 
 #endif 

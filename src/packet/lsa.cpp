@@ -2,28 +2,52 @@
 #include "../../include/global_settings/common.h"
 #include "../../include/global_settings/router.h"
 
-LSAHeader::Relation LSAHeader::compare(LSAHeader *another) {
-    //这里有问题！！没有完全实现
+//LSAHeader::Relation LSAHeader::compare(LSAHeader *another) {
+//    //这里有问题！！没有完全实现
+//    if (ls_type != another->ls_type 
+//            || link_state_id != another->link_state_id 
+//            || advertising_router != another->advertising_router) {
+//        return NOT_SAME;
+//    }
+//
+//    if (ls_seq_num > another->ls_seq_num) {
+//        return NEWER;
+//    } else if (ls_seq_num < another->ls_seq_num) {
+//        return OLDER;
+//    }
+//
+//    // Checksums are the same, compare ages
+//    if (ls_age > another->ls_age) {
+//        return OLDER;
+//    } else if (ls_age < another->ls_age) {
+//        return NEWER;
+//    }
+//
+//    return SAME;
+//}
+
+bool LSAHeader::same(LSAHeader *another) {
     if (ls_type != another->ls_type 
             || link_state_id != another->link_state_id 
             || advertising_router != another->advertising_router) {
-        return NOT_SAME;
+        return false;
     }
+    return true;
+}
 
+int LSAHeader::compare(LSAHeader *another) {
     if (ls_seq_num > another->ls_seq_num) {
-        return NEWER;
+        return -1;
     } else if (ls_seq_num < another->ls_seq_num) {
-        return OLDER;
+        return 1;
     }
 
-    // Checksums are the same, compare ages
     if (ls_age > another->ls_age) {
-        return OLDER;
+        return 1;
     } else if (ls_age < another->ls_age) {
-        return NEWER;
+        return -1;
     }
-
-    return SAME;
+    return 0;
 }
 
 void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length)

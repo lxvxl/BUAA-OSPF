@@ -5,3 +5,4 @@ LSADatabase router::lsa_db;
 
 const uint8_t router::config::options = 2;
 const uint16_t router::config::MTU = 1500;
+const int router::config::min_ls_arrival = 1;
