@@ -126,7 +126,9 @@ void Neighbor::event_is_adj_ok() {
 }   
 
 void Neighbor::event_seq_num_mismatch() {
-
+    logger::event_log(this, "seq num mismatch");
+    mark_state
+    print_state_log
 }  
 
 void Neighbor::event_1way() {

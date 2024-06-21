@@ -50,9 +50,53 @@ int LSAHeader::compare(LSAHeader *another) {
     return 0;
 }
 
+void LSAHeader::cal_checksum() {
+    const uint8_t* ptr = ((uint8_t*)this) + 2;
+    int length = ntohs(this->length) - 2;
+
+    int32_t x, y;
+	uint32_t mul;
+	uint32_t c0 = 0, c1 = 0;
+	uint16_t checksum = 0;
+    const int checksum_offset = 14;
+
+	for (int index = 0; index < length; index++) {
+		if (index == checksum_offset ||
+			index == checksum_offset+1) {
+            // in case checksum has not set 0 before
+			c1 += c0;
+			ptr++;
+		} else {
+			c0 = c0 + *(ptr++);
+			c1 += c0;
+		}
+	}
+
+	c0 = c0 % 255;
+	c1 = c1 % 255;	
+    mul = (length - checksum_offset)*(c0);
+  
+	x = mul - c0 - c1;
+	y = c1 - mul - 1;
+
+	if ( y >= 0 ) y++;
+	if ( x < 0 ) x--;
+
+	x %= 255;
+	y %= 255;
+
+	if (x == 0) x = 255;
+	if (y == 0) y = 255;
+
+	y &= 0x00FF;
+    this->ls_checksum = htons((x << 8) | y);
+  
+	//return (x << 8) | y;
+}
+
 void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length)
 {
-    this->ls_age              = 0;                
+    this->ls_age              = 1;                
     this->options             = router::config::options;               
     this->ls_type             = type;             
     this->advertising_router  = router::router_id;    
@@ -78,7 +122,7 @@ void LSAHeader::hton() {
     this->ls_age      = htons(this->ls_age);
     this->ls_seq_num  = htonl(this->ls_seq_num);
     this->length      = htons(this->length);
-    this->ls_checksum = htonl(this->ls_checksum);
+    this->ls_checksum = htons(this->ls_checksum);
 }
 
 
@@ -86,7 +130,7 @@ void LSAHeader::ntoh() {
     this->ls_age      = ntohs(this->ls_age);
     this->ls_seq_num  = ntohl(this->ls_seq_num);
     this->length      = ntohs(this->length);
-    this->ls_checksum = ntohl(this->ls_checksum);
+    this->ls_checksum = ntohs(this->ls_checksum);
 }
 
 RouterLSALink::RouterLSALink(uint32_t link_id, uint32_t link_data, uint8_t type, uint8_t tos_num, uint16_t metric) {

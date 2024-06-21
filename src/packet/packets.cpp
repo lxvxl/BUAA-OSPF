@@ -164,9 +164,11 @@ void OSPFLSU::fill(std::vector<LSAHeader*>& r_lsas, Interface *interface) {
         switch(lsa->ls_type) {
             case ROUTER:
                 ((RouterLSA*)lsa_p)->hton();
+                ((LSAHeader*)lsa_p)->cal_checksum();
                 break;
             case NETWORK:
                 ((NetworkLSA*)lsa_p)->hton();
+                ((LSAHeader*)lsa_p)->cal_checksum();
                 break;
         }
         lsa_p += lsa->length;
@@ -179,6 +181,7 @@ void OSPFLSAck::fill(std::vector<LSAHeader*>& v_lsas, Interface *interface) {
     for (int i = 0; i < lsa_num; i++) {
         this->lsa_headers[i] = *v_lsas[i];
         this->lsa_headers[i].hton();
+        //std::cout<<this->lsa_headers[i].ls_checksum<<std::endl;
     }
     ((OSPFHeader*)this)->fill(OSPFPacketType::LSA, interface->area_id, sizeof(OSPFLSAck) + lsa_num * sizeof(LSAHeader));
 }

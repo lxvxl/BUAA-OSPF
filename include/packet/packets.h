@@ -53,6 +53,7 @@ struct LSAHeader {
     void fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length);
     void hton();
     void ntoh();
+    void cal_checksum();
     bool same(LSAHeader *another);
     //返回-1：更新。返回1：更旧
     int compare(LSAHeader *another);
