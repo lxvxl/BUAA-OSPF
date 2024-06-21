@@ -11,8 +11,9 @@ namespace router {
     extern uint32_t                 router_id;
     extern LSADatabase              lsa_db;
     namespace config {
-        extern const uint8_t options; 
+        extern const uint8_t  options; 
         extern const uint16_t MTU;
+        extern const int      min_ls_arrival;        
     }
 }
 

@@ -11,7 +11,7 @@ void recv_thread_runner(Interface *interface);
 void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t saddr);
 void handle_recv_dd(OSPFDD *dd_packet, Interface *interface);
 void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface);
-void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr);
+void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, uint32_t daddr);
 void handle_recv_lsack(OSPFLSAck *lsa_packet, Interface *interface);
 
 
@@ -65,7 +65,7 @@ void Interface::recv_thread_runner() {
                 handle_recv_lsr((struct OSPFLSR*)ospf_header, this);
                 break;
             case OSPFPacketType::LSU:
-                handle_recv_lsu((struct OSPFLSU*)ospf_header, this, saddr);
+                handle_recv_lsu((struct OSPFLSU*)ospf_header, this, saddr, ipv4_header->daddr);
                 break;
             case OSPFPacketType::LSA:
                 handle_recv_lsack((struct OSPFLSAck*)ospf_header, this);
@@ -176,7 +176,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             //添加没有的LSA
             for (int i = 0; i < dd_packet->get_lsa_num(); i++) {
                 dd_packet->lsa_headers[i].ntoh();
-                if (!router::lsa_db.has_lsa(dd_packet->lsa_headers + i)) {
+                if (router::lsa_db.get_lsa(&dd_packet->lsa_headers[i]) == NULL) {
                     LSAHeader *req_header = new LSAHeader;
                     *req_header = dd_packet->lsa_headers[i];
                     neighbor->req_v_lsas.push_back(req_header);
@@ -206,6 +206,12 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
 void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface) {
     std::vector<LSAHeader*> req_r_lsas;
     Neighbor *neighbor = interface->get_neighbor_by_id(lsr_packet->header.router_id);
+    if (neighbor->state != EXCHANGE
+            && neighbor->state != LOADING
+            && neighbor->state != FULL) {
+        return;
+    }
+
     for (int i = 0; i < lsr_packet->get_req_num(); i++) {
         LSAHeader *lsa = router::lsa_db.get_lsa(ntohl(lsr_packet->reqs[i].ls_type), 
                                                 lsr_packet->reqs[i].link_state_id, 
@@ -217,41 +223,32 @@ void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface) {
         req_r_lsas.push_back(lsa);
     }
     interface->send_lsu_packet(req_r_lsas, neighbor->ip);
-    
-    // 在此处理LSR报文
-    //lsr_packet->show();
 }
 
-void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr) {
+void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, uint32_t daddr) {
     // 在此处理LSU报文
     LSAHeader *next_v_lsa = (LSAHeader*)((uint8_t*)lsu_packet + sizeof(OSPFLSU));
     std::vector<LSAHeader*> received_v_lsas;
     for (int i = 0; i < ntohl(lsu_packet->lsa_num); i++) {
-        //清除待请求的lsa
-        for (auto neighbor : interface->neighbors) {
-            for (int j = neighbor->req_v_lsas.size() - 1; j >= 0; j--) {
-                LSAHeader::Relation rel = neighbor->req_v_lsas[j]->compare(next_v_lsa);
-                if (rel == LSAHeader::OLDER || rel == LSAHeader::SAME) {
-                    delete neighbor->req_v_lsas[j];
-                    neighbor->req_v_lsas.erase(neighbor->req_v_lsas.begin() + j);
-                }
-            }
-        }
         received_v_lsas.push_back(next_v_lsa);
         //更新数据库，跳转到下一条lsa
         switch (next_v_lsa->ls_type) {
             case LSType::ROUTER:
                 ((RouterLSA*)next_v_lsa)->ntoh();
-                router::lsa_db.update(next_v_lsa);
                 next_v_lsa = (LSAHeader*)((uint8_t*)next_v_lsa + next_v_lsa->length);
                 break;
             case LSType::NETWORK:
                 ((NetworkLSA*)next_v_lsa)->ntoh();
-                router::lsa_db.update(next_v_lsa);
                 next_v_lsa = (LSAHeader*)((uint8_t*)next_v_lsa + next_v_lsa->length);
                 break;
             default:
                 break;
+        }
+    }
+    //如果是发给自己的，说明是在Loading阶段
+    if (daddr == interface->ip) {
+        for (auto lsa : received_v_lsas) {
+            
         }
     }
     interface->send_lsack_packet(received_v_lsas, saddr);
