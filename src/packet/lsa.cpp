@@ -26,6 +26,31 @@ LSAHeader::Relation LSAHeader::compare(LSAHeader *another) {
     return SAME;
 }
 
+void LSAHeader::cal_checksum() {
+   unsigned char* data  = (unsigned char*) this;
+   unsigned short bytes = ntohs(this->length);
+   unsigned short sum1  = 0xff, sum2 = 0xff;
+
+   /* RFC : The Fletcher checksum of the complete contents of the LSA,
+    *       including the LSA header but excluding the LS age field.
+    */
+   data += 2; bytes -= 2;
+
+   this->ls_checksum = 0;
+   while (bytes) {
+       size_t len = bytes > 20 ? 20 : bytes;
+       bytes -= len;
+       do {
+           sum2 += sum1 += *data++;
+       } while (--len);
+       sum1 = (sum1 & 0xff) + (sum1 >> 8);
+       sum2 = (sum2 & 0xff) + (sum2 >> 8);
+   }
+   sum1 = (sum1 & 0xff) + (sum1 >> 8);
+   sum2 = (sum2 & 0xff) + (sum2 >> 8);
+   this->ls_checksum = htons(sum2 << 8 | sum1);
+}
+
 void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length)
 {
     this->ls_age              = 1;                

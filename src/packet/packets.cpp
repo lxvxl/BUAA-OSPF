@@ -164,9 +164,11 @@ void OSPFLSU::fill(std::vector<LSAHeader*>& r_lsas, Interface *interface) {
         switch(lsa->ls_type) {
             case ROUTER:
                 ((RouterLSA*)lsa_p)->hton();
+                ((LSAHeader*)lsa_p)->cal_checksum();
                 break;
             case NETWORK:
                 ((NetworkLSA*)lsa_p)->hton();
+                ((LSAHeader*)lsa_p)->cal_checksum();
                 break;
         }
         lsa_p += lsa->length;
