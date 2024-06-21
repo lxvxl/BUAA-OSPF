@@ -27,28 +27,47 @@ LSAHeader::Relation LSAHeader::compare(LSAHeader *another) {
 }
 
 void LSAHeader::cal_checksum() {
-   unsigned char* data  = (unsigned char*) this;
-   unsigned short bytes = ntohs(this->length);
-   unsigned short sum1  = 0xff, sum2 = 0xff;
+    const uint8_t* ptr = ((uint8_t*)this) + 2;
+    int length = ntohs(this->length) - 2;
 
-   /* RFC : The Fletcher checksum of the complete contents of the LSA,
-    *       including the LSA header but excluding the LS age field.
-    */
-   data += 2; bytes -= 2;
+    int32_t x, y;
+	uint32_t mul;
+	uint32_t c0 = 0, c1 = 0;
+	uint16_t checksum = 0;
+    const int checksum_offset = 14;
 
-   this->ls_checksum = 0;
-   while (bytes) {
-       size_t len = bytes > 20 ? 20 : bytes;
-       bytes -= len;
-       do {
-           sum2 += sum1 += *data++;
-       } while (--len);
-       sum1 = (sum1 & 0xff) + (sum1 >> 8);
-       sum2 = (sum2 & 0xff) + (sum2 >> 8);
-   }
-   sum1 = (sum1 & 0xff) + (sum1 >> 8);
-   sum2 = (sum2 & 0xff) + (sum2 >> 8);
-   this->ls_checksum = htons(sum2 << 8 | sum1);
+	for (int index = 0; index < length; index++) {
+		if (index == checksum_offset ||
+			index == checksum_offset+1) {
+            // in case checksum has not set 0 before
+			c1 += c0;
+			ptr++;
+		} else {
+			c0 = c0 + *(ptr++);
+			c1 += c0;
+		}
+	}
+
+	c0 = c0 % 255;
+	c1 = c1 % 255;	
+    mul = (length - checksum_offset)*(c0);
+  
+	x = mul - c0 - c1;
+	y = c1 - mul - 1;
+
+	if ( y >= 0 ) y++;
+	if ( x < 0 ) x--;
+
+	x %= 255;
+	y %= 255;
+
+	if (x == 0) x = 255;
+	if (y == 0) y = 255;
+
+	y &= 0x00FF;
+    this->ls_checksum = htons((x << 8) | y);
+  
+	//return (x << 8) | y;
 }
 
 void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length)
