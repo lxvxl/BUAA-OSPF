@@ -118,6 +118,16 @@ void LSAHeader::fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, u
     this->ls_checksum = (uint16_t)((c1 << 8) | c0);
 }
 
+void LSAHeader::show() {
+    std::cout<<"ls_age:\t"<<this->ls_age<<std::endl;
+    std::cout<<"ls_type:\t"<<this->ls_type<<std::endl;
+    std::cout<<"ad_router:\t"<<inet_ntoa({this->advertising_router})<<std::endl;
+    std::cout<<"seq_num:\t"<<this->ls_seq_num<<std::endl;
+    std::cout<<"length:\t"<<this->length<<std::endl;
+    std::cout<<"link_state_id:\t"<<inet_ntoa({link_state_id})<<std::endl;
+}
+
+
 void LSAHeader::hton() {
     this->ls_age      = htons(this->ls_age);
     this->ls_seq_num  = htonl(this->ls_seq_num);

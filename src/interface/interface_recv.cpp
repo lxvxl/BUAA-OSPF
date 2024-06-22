@@ -134,7 +134,8 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
     //    return;
     //}
     // 在此处理DD报文
-    printf("dd!\n");
+    //std::cout<<"receive a dd"<<std::endl;
+    //dd_packet->show();
     Neighbor *neighbor = interface->get_neighbor_by_id(dd_packet->header.router_id);
     OSPFDD *last_dd = neighbor->dd_last_recv;
     uint32_t packet_dd_seq_num = ntohl(dd_packet->dd_sequence_number);
@@ -185,10 +186,13 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 if (!neighbor->b_MS) {
                     interface->send_last_dd_packet(neighbor);
                 }
+                logger::event_log(interface, "received repeated DD packet");
                 return;
             } 
             //主从位不匹配或意外设置初始位或选项域与之前不同
             if (!(dd_packet->b_MS ^ neighbor->b_MS) || dd_packet->b_I || last_dd->options != dd_packet->options) {
+                logger::event_log(interface, "received unmatched MS or I or options in DD packet");
+                printf("%d %d; %d; %d, %d\n", dd_packet->b_MS, neighbor->b_MS, dd_packet->b_I, last_dd->options, dd_packet->options);
                 neighbor->event_seq_num_mismatch();
                 return;
             }
@@ -196,6 +200,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             //检查dd序号
             if (neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num + 1 
                 || !neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num) {
+                logger::event_log(interface, "received unmatched sequence number in DD packet");
                 neighbor->event_seq_num_mismatch();
                 return;
             }

@@ -49,6 +49,7 @@ struct LSAHeader {
     bool same(LSAHeader *another);
     //返回-1：更新。返回1：更旧
     int compare(LSAHeader *another);
+    void show();
 };
 
 struct RouterLSALink {

@@ -77,6 +77,24 @@ void LSADatabase::clear_invalid_lsa(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) 
     for (auto interface : router::interfaces) {
         interface->clear_invalid_req(old_r_lsa, new_r_lsa);
     }
+    switch(old_r_lsa->ls_type) {
+        case LSType::ROUTER:
+            for (auto it = router_lsas.begin(); it != router_lsas.end(); it++) {
+                if ((LSAHeader*)*it == old_r_lsa) {
+                    router_lsas.erase(it);
+                    break;
+                }
+            }
+            break;
+        case LSType::NETWORK:
+            for (auto it = network_lsas.begin(); it != network_lsas.end(); it++) {
+                if ((LSAHeader*)*it == old_r_lsa) {
+                    network_lsas.erase(it);
+                    break;
+                }
+            }
+            break;
+    }
     delete old_r_lsa;
 }
 
@@ -92,13 +110,7 @@ LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
             router_lsas.push_back(new_r_lsa);
             protected_lsas[(LSAHeader*)new_r_lsa] = 1;
             if (get_lsa(v_lsa) != NULL) {
-                for (auto it = router_lsas.begin(); it != router_lsas.end(); it++) {
-                    if ((LSAHeader*)*it == old_r_lsa) {
-                        router_lsas.erase(it);
-                        clear_invalid_lsa(old_r_lsa, (LSAHeader*)new_r_lsa);
-                        break;
-                    }
-                }
+                clear_invalid_lsa(old_r_lsa, (LSAHeader*)new_r_lsa);
             }
             return (LSAHeader*)new_r_lsa;
         }
@@ -108,13 +120,7 @@ LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
             network_lsas.push_back(new_r_lsa);
             protected_lsas[(LSAHeader*)new_r_lsa] = 1;
             if (get_lsa(v_lsa) != NULL) {
-                for (auto it = network_lsas.begin(); it != network_lsas.end(); it++) {
-                    if ((LSAHeader*)*it == old_r_lsa) {
-                        network_lsas.erase(it);
-                        clear_invalid_lsa(old_r_lsa, (LSAHeader*)new_r_lsa);
-                        break;
-                    }
-                }
+                clear_invalid_lsa(old_r_lsa, (LSAHeader*)new_r_lsa);
             }
             return (LSAHeader*)new_r_lsa;
         }
