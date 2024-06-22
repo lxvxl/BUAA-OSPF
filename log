@@ -1,0 +1,109 @@
+[sudo] zj 的密码： 
+[Interface enp0s3]: interface up
+[Interface enp0s3]: DOWN --> WAITING
+initing recv thread
+initing hello thread
+[Neighbor 507553984]: hello_received
+[Neighbor 507553984]: DOWN --> INIT
+[Neighbor 507553984]: 2way_received
+[Interface enp0s3]: neighbor change
+New DR: 192.168.64.30, New BDR: 192.168.64.20
+[Neighbor 507553984]: adj_ok?
+[Neighbor 507553984]: 2WAY --> EXSTART
+[Interface enp0s3]: WAITING --> BACKUP
+[Neighbor 507553984]: INIT --> EXSTART
+dd!
+[Neighbor 507553984]: negotiation_done
+[Neighbor 507553984]: EXSTART --> EXCHANGE
+dd!
+dd!
+[Neighbor 507553984]: seq num mismatch
+[Neighbor 507553984]: EXCHANGE --> EXSTART
+dd!
+[Neighbor 507553984]: negotiation_done
+[Neighbor 507553984]: EXSTART --> EXCHANGE
+[Neighbor 507553984]: loading done
+[Neighbor 507553984]: EXCHANGE --> FULL
+[Neighbor 507553984]: hello_received
+[Neighbor 507553984]: event 1way
+[Interface enp0s3]: neighbor change
+New DR: 192.168.64.20, New BDR: 0.0.0.0
+[Interface enp0s3]: BACKUP --> DR
+[Neighbor 507553984]: FULL --> INIT
+*** Error in `./myOspf': malloc(): memory corruption (fast): 0x00007f107c002b65 ***
+======= Backtrace: =========
+/lib/x86_64-linux-gnu/libc.so.6(+0x777f5)[0x7f1082da37f5]
+/lib/x86_64-linux-gnu/libc.so.6(+0x82679)[0x7f1082dae679]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_malloc+0x54)[0x7f1082db01d4]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(_Znwm+0x18)[0x7f10835b6e78]
+./myOspf[0x408af0]
+./myOspf[0x4084cc]
+./myOspf[0x40774c]
+./myOspf[0x405dbc]
+./myOspf[0x4044c3]
+./myOspf[0x40329c]
+./myOspf[0x401e60]
+./myOspf[0x402289]
+./myOspf[0x402ba3]
+./myOspf[0x417998]
+./myOspf[0x40f24b]
+./myOspf[0x40efe0]
+./myOspf[0x414e79]
+./myOspf[0x414dcd]
+./myOspf[0x414d23]
+./myOspf[0x414ce8]
+./myOspf[0x414c3e]
+./myOspf[0x414bce]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xb8c80)[0x7f10835e1c80]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x76ba)[0x7f10830fd6ba]
+/lib/x86_64-linux-gnu/libc.so.6(clone+0x6d)[0x7f1082e3351d]
+======= Memory map: ========
+00400000-0042a000 r-xp 00000000 08:01 944050                             /home/zj/桌面/ospf/BUAA-OSPF/myOspf
+0062a000-0062b000 r--p 0002a000 08:01 944050                             /home/zj/桌面/ospf/BUAA-OSPF/myOspf
+0062b000-0062c000 rw-p 0002b000 08:01 944050                             /home/zj/桌面/ospf/BUAA-OSPF/myOspf
+01e64000-01e96000 rw-p 00000000 00:00 0                                  [heap]
+7f1074000000-7f1074021000 rw-p 00000000 00:00 0 
+7f1074021000-7f1078000000 ---p 00000000 00:00 0 
+7f1078000000-7f1078021000 rw-p 00000000 00:00 0 
+7f1078021000-7f107c000000 ---p 00000000 00:00 0 
+7f107c000000-7f107c021000 rw-p 00000000 00:00 0 
+7f107c021000-7f1080000000 ---p 00000000 00:00 0 
+7f1081220000-7f1081221000 ---p 00000000 00:00 0 
+7f1081221000-7f1081a21000 rw-p 00000000 00:00 0 
+7f1081a21000-7f1081a22000 ---p 00000000 00:00 0 
+7f1081a22000-7f1082222000 rw-p 00000000 00:00 0 
+7f1082222000-7f1082223000 ---p 00000000 00:00 0 
+7f1082223000-7f1082a23000 rw-p 00000000 00:00 0 
+7f1082a23000-7f1082b2b000 r-xp 00000000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f1082b2b000-7f1082d2a000 ---p 00108000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f1082d2a000-7f1082d2b000 r--p 00107000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f1082d2b000-7f1082d2c000 rw-p 00108000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f1082d2c000-7f1082eec000 r-xp 00000000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f1082eec000-7f10830ec000 ---p 001c0000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f10830ec000-7f10830f0000 r--p 001c0000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f10830f0000-7f10830f2000 rw-p 001c4000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f10830f2000-7f10830f6000 rw-p 00000000 00:00 0 
+7f10830f6000-7f108310e000 r-xp 00000000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f108310e000-7f108330d000 ---p 00018000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f108330d000-7f108330e000 r--p 00017000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f108330e000-7f108330f000 rw-p 00018000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f108330f000-7f1083313000 rw-p 00000000 00:00 0 
+7f1083313000-7f1083329000 r-xp 00000000 08:01 1050641                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7f1083329000-7f1083528000 ---p 00016000 08:01 1050641                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7f1083528000-7f1083529000 rw-p 00015000 08:01 1050641                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7f1083529000-7f108369b000 r-xp 00000000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f108369b000-7f108389b000 ---p 00172000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f108389b000-7f10838a5000 r--p 00172000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f10838a5000-7f10838a7000 rw-p 0017c000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f10838a7000-7f10838ab000 rw-p 00000000 00:00 0 
+7f10838ab000-7f10838d1000 r-xp 00000000 08:01 1045549                    /lib/x86_64-linux-gnu/ld-2.23.so
+7f1083ab3000-7f1083ab9000 rw-p 00000000 00:00 0 
+7f1083acf000-7f1083ad0000 rw-p 00000000 00:00 0 
+7f1083ad0000-7f1083ad1000 r--p 00025000 08:01 1045549                    /lib/x86_64-linux-gnu/ld-2.23.so
+7f1083ad1000-7f1083ad2000 rw-p 00026000 08:01 1045549                    /lib/x86_64-linux-gnu/ld-2.23.so
+7f1083ad2000-7f1083ad3000 rw-p 00000000 00:00 0 
+7ffe8a4e3000-7ffe8a504000 rw-p 00000000 00:00 0                          [stack]
+7ffe8a52c000-7ffe8a52f000 r--p 00000000 00:00 0                          [vvar]
+7ffe8a52f000-7ffe8a531000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Aborted (core dumped)

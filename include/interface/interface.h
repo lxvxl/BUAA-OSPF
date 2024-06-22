@@ -15,7 +15,7 @@
 struct Neighbor;
 struct LSADatabase;
 
-enum InterfaceState {
+enum InterfaceState : int{
     DOWN,
     LOOPBACK,
     WAITING,

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <vector>
+#include <map>
 #include "../packet/packets.h"
 #include "../interface/interface.h"
 
@@ -11,6 +12,7 @@ struct Interface;
 struct RouterLSA;
 struct NetworkLSA;
 struct LSAHeader;
+enum InterfaceState : int;
 
 struct LSADatabase {
     std::vector<RouterLSA*>     router_lsas;
