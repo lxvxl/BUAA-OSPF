@@ -27,25 +27,25 @@ std::map<NeighborState, std::string> neighbor_state_map = {
 };
 
 void logger::event_log(Interface *interface, std::string event) {
-    out<<"[Interface "<<interface->name<<"]: "<<event<<std::endl;
+    out<<"\r[Interface "<<interface->name<<"]: "<<event<<std::endl;
 }
 void logger::event_log(Neighbor *neighbor, std::string event) {
-    out<<"[Neighbor "<<neighbor->ip<<"]: "<<event<<std::endl;
+    out<<"\r[Neighbor "<<neighbor->ip<<"]: "<<event<<std::endl;
 }
 
 void logger::state_transition_log(Interface *interface, InterfaceState state1, InterfaceState state2) {
-     out<<"[Interface "<<interface->name<<"]: "<<interface_state_map[state1]<<" --> "<<interface_state_map[state2]<<std::endl;
+    out<<"\r[Interface "<<interface->name<<"]: "<<interface_state_map[state1]<<" --> "<<interface_state_map[state2]<<std::endl;
 }
  
 void logger::state_transition_log(Neighbor *neighbor, NeighborState state1, NeighborState state2) {
-    out<<"[Neighbor "<<neighbor->ip<<"]: "<<neighbor_state_map[state1]<<" --> "<<neighbor_state_map[state2]<<std::endl;
+    out<<"\r[Neighbor "<<neighbor->ip<<"]: "<<neighbor_state_map[state1]<<" --> "<<neighbor_state_map[state2]<<std::endl;
 }
 
 void logger::other_log(Interface *interface, std::string infos) {
-    out<<"[Interface "<<interface->name<<"]: "<<infos<<std::endl;
+    out<<"\r[Interface "<<interface->name<<"]: "<<infos<<std::endl;
 
 }
 
 void logger::other_log(Neighbor *neighbor, std::string infos) {
-    out<<"[Neighbor "<<neighbor->ip<<"]: "<<infos<<std::endl;
+    out<<"\r[Neighbor "<<neighbor->ip<<"]: "<<infos<<std::endl;
 }
