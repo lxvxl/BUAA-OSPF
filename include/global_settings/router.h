@@ -4,12 +4,15 @@
 #include "../interface/interface.h"
 #include <stdint.h>
 #include "../db/lsa_db.h"
+#include <mutex>
 
 struct Interface;
 namespace router {
     extern std::vector<Interface*>  interfaces; 
     extern uint32_t                 router_id;
     extern LSADatabase              lsa_db;
+    extern std::mutex               mutex;
+
     namespace config {
         extern const uint8_t  options; 
         extern const uint16_t MTU;

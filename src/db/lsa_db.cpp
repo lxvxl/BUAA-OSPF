@@ -24,6 +24,7 @@ LSADatabase::LSADatabase() {
 void LSADatabase::db_thread_runner() {
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::unique_lock<std::mutex> lock(router::mutex);
         for (RouterLSA *lsa : router_lsas) {
             lsa->header.ls_age++;
         }
@@ -38,6 +39,7 @@ void LSADatabase::db_thread_runner() {
                 it++;
             }
         }        
+        lock.unlock();
     }
 }
 

@@ -2,7 +2,9 @@
 #include "../../include/interface/interface.h"
 #include "../../include/global_settings/common.h"
 #include "../../include/logger/logger.h"
+#include "../../include/global_settings/router.h"
 #include <functional>
+#include <mutex>
 
 void Interface::send_thread_runner() {
     printf("initing hello thread\n");
@@ -19,6 +21,7 @@ void Interface::send_thread_runner() {
 
     while (state != DOWN) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::unique_lock<std::mutex> lock(router::mutex);
         this->hello_timer--;
         this->wait_timer--;
 
@@ -61,6 +64,7 @@ void Interface::send_thread_runner() {
                 send_lsu_packet(retransmit_r_lsas, neighbor->ip);
             }
         }
+        lock.unlock();
     }
     logger::event_log(this, "发送线程已关闭");
 }

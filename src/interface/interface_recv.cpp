@@ -39,6 +39,7 @@ void Interface::recv_thread_runner() {
         // 接收报文
         memset(recv_buffer, 0, BUFFER_SIZE);
         ssize_t packet_len = recv(this->recv_socket_fd, recv_buffer, BUFFER_SIZE, 0);
+        std::unique_lock<std::mutex> lock(router::mutex);
         if (packet_len < 0) {
             perror("Failed to receive packets");
             exit(EXIT_FAILURE);
@@ -74,6 +75,7 @@ void Interface::recv_thread_runner() {
             default:
                 printf("Error: illegal type");
         }
+        lock.unlock();
     }    
     logger::event_log(this, "接收线程已关闭");
 }
