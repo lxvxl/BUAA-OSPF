@@ -23,6 +23,8 @@ Neighbor *Interface::get_neighbor_by_ip(uint32_t ip) {
 Interface::Interface(const char *name)
 {
     this->name = name;
+    memset(send_buffer, 0, sizeof(send_buffer));
+    memset(recv_buffer, 0, sizeof(recv_buffer));
 }
 
 void Interface::clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) {

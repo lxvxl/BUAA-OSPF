@@ -95,7 +95,7 @@ void LSADatabase::clear_invalid_lsa(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) 
             }
             break;
     }
-    delete old_r_lsa;
+    free(old_r_lsa);
 }
 
 LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
@@ -107,21 +107,21 @@ LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
         case LSType::ROUTER: {
             RouterLSA *new_r_lsa = (RouterLSA*)malloc(v_lsa->length);
             memcpy(new_r_lsa, v_lsa, v_lsa->length);
-            router_lsas.push_back(new_r_lsa);
-            protected_lsas[(LSAHeader*)new_r_lsa] = 1;
-            if (get_lsa(v_lsa) != NULL) {
+            if (old_r_lsa != NULL) {
                 clear_invalid_lsa(old_r_lsa, (LSAHeader*)new_r_lsa);
             }
+            router_lsas.push_back(new_r_lsa);
+            protected_lsas[(LSAHeader*)new_r_lsa] = 1;
             return (LSAHeader*)new_r_lsa;
         }
         case LSType::NETWORK: { 
             NetworkLSA *new_r_lsa = (NetworkLSA*)malloc(v_lsa->length);
             memcpy(new_r_lsa, v_lsa, v_lsa->length);
-            network_lsas.push_back(new_r_lsa);
-            protected_lsas[(LSAHeader*)new_r_lsa] = 1;
-            if (get_lsa(v_lsa) != NULL) {
+            if (old_r_lsa != NULL) {
                 clear_invalid_lsa(old_r_lsa, (LSAHeader*)new_r_lsa);
             }
+            network_lsas.push_back(new_r_lsa);
+            protected_lsas[(LSAHeader*)new_r_lsa] = 1;
             return (LSAHeader*)new_r_lsa;
         }
         default:

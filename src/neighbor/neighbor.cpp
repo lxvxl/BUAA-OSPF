@@ -25,13 +25,13 @@ Neighbor::Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip) {
     this->b_I       = 1;
     this->b_M       = 1;
     this->b_MS      = 1;
-    this->dd_last_recv = (OSPFDD*)malloc(4096);
-    this->dd_last_send = (OSPFDD*)malloc(4096);
+    this->dd_last_recv = (OSPFDD*)calloc(1, 4096);
+    this->dd_last_send = (OSPFDD*)calloc(1, 4096);
 }
 
 Neighbor::Neighbor() {
-    this->dd_last_recv = (OSPFDD*)malloc(4);
-    this->dd_last_send = (OSPFDD*)malloc(4);
+    this->dd_last_recv = (OSPFDD*)calloc(1, 4);
+    this->dd_last_send = (OSPFDD*)calloc(1, 4);
 }
 
 Neighbor::~Neighbor() {

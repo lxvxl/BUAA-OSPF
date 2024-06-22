@@ -98,7 +98,7 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
     neighbor->event_hello_received();
 
     //若邻居的hello包中有自己
-    if (neighbor->state == NeighborState::INIT && hello_packet->has_neighbor(router::router_id)) {
+    if (hello_packet->has_neighbor(router::router_id)) {
         neighbor->event_2way_received();
     } else {
         neighbor->event_1way_received();
