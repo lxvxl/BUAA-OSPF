@@ -1,109 +1,209 @@
-[sudo] zj 的密码： 
+==4218== Memcheck, a memory error detector
+==4218== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==4218== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==4218== Command: ./myOspf
+==4218== 
 [Interface enp0s3]: interface up
-[Interface enp0s3]: DOWN --> WAITING
-initing recv thread
 initing hello thread
+initing recv thread
+[Interface enp0s3]: DOWN --> WAITING
+==4218== Mismatched free() / delete / delete []
+==4218==    at 0x4C2F24B: operator delete(void*) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4218==    by 0x4028EB: LSADatabase::clear_invalid_lsa(LSAHeader*, LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x402E4A: LSADatabase::generate_router_lsa() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4116B0: Interface::event_interface_up() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41C1BE: main (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==  Address 0x5cd44f0 is 0 bytes inside a block of size 24 alloc'd
+==4218==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4218==    by 0x4199A0: RouterLSA::generate() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40218D: LSADatabase::LSADatabase() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x416BED: __static_initialization_and_destruction_0(int, int) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x416C17: _GLOBAL__sub_I__ZN6router10interfacesE (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41C5FC: __libc_csu_init (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x560F7CE: (below main) (libc-start.c:247)
+==4218== 
 [Neighbor 507553984]: hello_received
 [Neighbor 507553984]: DOWN --> INIT
 [Neighbor 507553984]: 2way_received
 [Interface enp0s3]: neighbor change
 New DR: 192.168.64.30, New BDR: 192.168.64.20
 [Neighbor 507553984]: adj_ok?
+==4218== Thread 4:
+==4218== Syscall param socketcall.sendto(msg) points to uninitialised byte(s)
+==4218==    at 0x53E2AD3: ??? (syscall-template.S:84)
+==4218==    by 0x4164D5: Interface::send_dd_packet(Neighbor*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x417BD1: Neighbor::event_is_adj_ok() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x412516: Interface::elect_dr() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x411A39: Interface::event_neighbor_change() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4172E9: Neighbor::event_2way_received() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F6E3: handle_recv_hello(OSPFHello*, Interface*, unsigned int) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F460: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4154F4: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415448: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41539E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415363: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==  Address 0xffeffe4dc is on thread 1's stack
+==4218==  in frame #2, created by main (???:)
+==4218== 
+==4218== Conditional jump or move depends on uninitialised value(s)
+==4218==    at 0x416515: Interface::send_dd_packet(Neighbor*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x417BD1: Neighbor::event_is_adj_ok() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x412516: Interface::elect_dr() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x411A39: Interface::event_neighbor_change() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4172E9: Neighbor::event_2way_received() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F6E3: handle_recv_hello(OSPFHello*, Interface*, unsigned int) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F460: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4154F4: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415448: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41539E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415363: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4152B9: std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::operator()() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218== 
 [Neighbor 507553984]: 2WAY --> EXSTART
 [Interface enp0s3]: WAITING --> BACKUP
+==4218== Mismatched free() / delete / delete []
+==4218==    at 0x4C2F24B: operator delete(void*) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4218==    by 0x4028EB: LSADatabase::clear_invalid_lsa(LSAHeader*, LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x402E4A: LSADatabase::generate_router_lsa() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x411ABB: Interface::event_neighbor_change() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4172E9: Neighbor::event_2way_received() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F6E3: handle_recv_hello(OSPFHello*, Interface*, unsigned int) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F460: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4154F4: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415448: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41539E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415363: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4152B9: std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::operator()() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==  Address 0x5cd5020 is 0 bytes inside a block of size 36 alloc'd
+==4218==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4218==    by 0x4199A0: RouterLSA::generate() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x402E11: LSADatabase::generate_router_lsa() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4116B0: Interface::event_interface_up() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41C1BE: main (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218== 
 [Neighbor 507553984]: INIT --> EXSTART
-dd!
+==4218== Conditional jump or move depends on uninitialised value(s)
+==4218==    at 0x40F8D2: handle_recv_dd(OSPFDD*, Interface*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F478: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4154F4: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415448: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41539E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415363: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4152B9: std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::operator()() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415249: std::thread::_Impl<std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()> >::_M_run() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4EF2C7F: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21)
+==4218==    by 0x53D96B9: start_thread (pthread_create.c:333)
+==4218==    by 0x56F651C: clone (clone.S:109)
+==4218== 
 [Neighbor 507553984]: negotiation_done
 [Neighbor 507553984]: EXSTART --> EXCHANGE
-dd!
-dd!
-[Neighbor 507553984]: seq num mismatch
-[Neighbor 507553984]: EXCHANGE --> EXSTART
-dd!
-[Neighbor 507553984]: negotiation_done
-[Neighbor 507553984]: EXSTART --> EXCHANGE
-[Neighbor 507553984]: loading done
-[Neighbor 507553984]: EXCHANGE --> FULL
-[Neighbor 507553984]: hello_received
-[Neighbor 507553984]: event 1way
-[Interface enp0s3]: neighbor change
-New DR: 192.168.64.20, New BDR: 0.0.0.0
-[Interface enp0s3]: BACKUP --> DR
-[Neighbor 507553984]: FULL --> INIT
-*** Error in `./myOspf': malloc(): memory corruption (fast): 0x00007f107c002b65 ***
-======= Backtrace: =========
-/lib/x86_64-linux-gnu/libc.so.6(+0x777f5)[0x7f1082da37f5]
-/lib/x86_64-linux-gnu/libc.so.6(+0x82679)[0x7f1082dae679]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_malloc+0x54)[0x7f1082db01d4]
-/usr/lib/x86_64-linux-gnu/libstdc++.so.6(_Znwm+0x18)[0x7f10835b6e78]
-./myOspf[0x408af0]
-./myOspf[0x4084cc]
-./myOspf[0x40774c]
-./myOspf[0x405dbc]
-./myOspf[0x4044c3]
-./myOspf[0x40329c]
-./myOspf[0x401e60]
-./myOspf[0x402289]
-./myOspf[0x402ba3]
-./myOspf[0x417998]
-./myOspf[0x40f24b]
-./myOspf[0x40efe0]
-./myOspf[0x414e79]
-./myOspf[0x414dcd]
-./myOspf[0x414d23]
-./myOspf[0x414ce8]
-./myOspf[0x414c3e]
-./myOspf[0x414bce]
-/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xb8c80)[0x7f10835e1c80]
-/lib/x86_64-linux-gnu/libpthread.so.0(+0x76ba)[0x7f10830fd6ba]
-/lib/x86_64-linux-gnu/libc.so.6(clone+0x6d)[0x7f1082e3351d]
-======= Memory map: ========
-00400000-0042a000 r-xp 00000000 08:01 944050                             /home/zj/桌面/ospf/BUAA-OSPF/myOspf
-0062a000-0062b000 r--p 0002a000 08:01 944050                             /home/zj/桌面/ospf/BUAA-OSPF/myOspf
-0062b000-0062c000 rw-p 0002b000 08:01 944050                             /home/zj/桌面/ospf/BUAA-OSPF/myOspf
-01e64000-01e96000 rw-p 00000000 00:00 0                                  [heap]
-7f1074000000-7f1074021000 rw-p 00000000 00:00 0 
-7f1074021000-7f1078000000 ---p 00000000 00:00 0 
-7f1078000000-7f1078021000 rw-p 00000000 00:00 0 
-7f1078021000-7f107c000000 ---p 00000000 00:00 0 
-7f107c000000-7f107c021000 rw-p 00000000 00:00 0 
-7f107c021000-7f1080000000 ---p 00000000 00:00 0 
-7f1081220000-7f1081221000 ---p 00000000 00:00 0 
-7f1081221000-7f1081a21000 rw-p 00000000 00:00 0 
-7f1081a21000-7f1081a22000 ---p 00000000 00:00 0 
-7f1081a22000-7f1082222000 rw-p 00000000 00:00 0 
-7f1082222000-7f1082223000 ---p 00000000 00:00 0 
-7f1082223000-7f1082a23000 rw-p 00000000 00:00 0 
-7f1082a23000-7f1082b2b000 r-xp 00000000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
-7f1082b2b000-7f1082d2a000 ---p 00108000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
-7f1082d2a000-7f1082d2b000 r--p 00107000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
-7f1082d2b000-7f1082d2c000 rw-p 00108000 08:01 1045552                    /lib/x86_64-linux-gnu/libm-2.23.so
-7f1082d2c000-7f1082eec000 r-xp 00000000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
-7f1082eec000-7f10830ec000 ---p 001c0000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
-7f10830ec000-7f10830f0000 r--p 001c0000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
-7f10830f0000-7f10830f2000 rw-p 001c4000 08:01 1045557                    /lib/x86_64-linux-gnu/libc-2.23.so
-7f10830f2000-7f10830f6000 rw-p 00000000 00:00 0 
-7f10830f6000-7f108310e000 r-xp 00000000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
-7f108310e000-7f108330d000 ---p 00018000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
-7f108330d000-7f108330e000 r--p 00017000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
-7f108330e000-7f108330f000 rw-p 00018000 08:01 1045539                    /lib/x86_64-linux-gnu/libpthread-2.23.so
-7f108330f000-7f1083313000 rw-p 00000000 00:00 0 
-7f1083313000-7f1083329000 r-xp 00000000 08:01 1050641                    /lib/x86_64-linux-gnu/libgcc_s.so.1
-7f1083329000-7f1083528000 ---p 00016000 08:01 1050641                    /lib/x86_64-linux-gnu/libgcc_s.so.1
-7f1083528000-7f1083529000 rw-p 00015000 08:01 1050641                    /lib/x86_64-linux-gnu/libgcc_s.so.1
-7f1083529000-7f108369b000 r-xp 00000000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
-7f108369b000-7f108389b000 ---p 00172000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
-7f108389b000-7f10838a5000 r--p 00172000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
-7f10838a5000-7f10838a7000 rw-p 0017c000 08:01 143698                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
-7f10838a7000-7f10838ab000 rw-p 00000000 00:00 0 
-7f10838ab000-7f10838d1000 r-xp 00000000 08:01 1045549                    /lib/x86_64-linux-gnu/ld-2.23.so
-7f1083ab3000-7f1083ab9000 rw-p 00000000 00:00 0 
-7f1083acf000-7f1083ad0000 rw-p 00000000 00:00 0 
-7f1083ad0000-7f1083ad1000 r--p 00025000 08:01 1045549                    /lib/x86_64-linux-gnu/ld-2.23.so
-7f1083ad1000-7f1083ad2000 rw-p 00026000 08:01 1045549                    /lib/x86_64-linux-gnu/ld-2.23.so
-7f1083ad2000-7f1083ad3000 rw-p 00000000 00:00 0 
-7ffe8a4e3000-7ffe8a504000 rw-p 00000000 00:00 0                          [stack]
-7ffe8a52c000-7ffe8a52f000 r--p 00000000 00:00 0                          [vvar]
-7ffe8a52f000-7ffe8a531000 r-xp 00000000 00:00 0                          [vdso]
-ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
-Aborted (core dumped)
+ls_age: 1
+ls_type:
+ad_router:      2.2.2.2
+seq_num:        2147483651
+length: 36
+link_state_id:  2.2.2.2
+==4218== Conditional jump or move depends on uninitialised value(s)
+==4218==    at 0x416515: Interface::send_dd_packet(Neighbor*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40FE3F: handle_recv_dd(OSPFDD*, Interface*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F478: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4154F4: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415448: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41539E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415363: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4152B9: std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::operator()() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415249: std::thread::_Impl<std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()> >::_M_run() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4EF2C7F: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21)
+==4218==    by 0x53D96B9: start_thread (pthread_create.c:333)
+==4218==    by 0x56F651C: clone (clone.S:109)
+==4218== 
+==4218== Invalid read of size 4
+==4218==    at 0x419102: LSAHeader::compare(LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41585B: Interface::clear_invalid_req(LSAHeader*, LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x402777: LSADatabase::clear_invalid_lsa(LSAHeader*, LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x402A2F: LSADatabase::update(LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4103CB: handle_recv_lsu(OSPFLSU*, Interface*, unsigned int, unsigned int) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F4B2: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4154F4: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415448: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41539E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415363: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4152B9: std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::operator()() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415249: std::thread::_Impl<std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()> >::_M_run() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==  Address 0xc is not stack'd, malloc'd or (recently) free'd
+==4218== 
+==4218== 
+==4218== Process terminating with default action of signal 11 (SIGSEGV)
+==4218==  Access not within mapped region at address 0xC
+==4218==    at 0x419102: LSAHeader::compare(LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41585B: Interface::clear_invalid_req(LSAHeader*, LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x402777: LSADatabase::clear_invalid_lsa(LSAHeader*, LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x402A2F: LSADatabase::update(LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4103CB: handle_recv_lsu(OSPFLSU*, Interface*, unsigned int, unsigned int) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x40F4B2: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4154F4: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415448: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41539E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415363: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4152B9: std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::operator()() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x415249: std::thread::_Impl<std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()> >::_M_run() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==  If you believe this happened as a result of a stack
+==4218==  overflow in your program's main thread (unlikely but
+==4218==  possible), you can try to increase the size of the
+==4218==  main thread stack using the --main-stacksize= flag.
+==4218==  The main thread stack size used in this run was 8388608.
+==4218== 
+==4218== HEAP SUMMARY:
+==4218==     in use at exit: 83,404 bytes in 35 blocks
+==4218==   total heap usage: 55 allocs, 20 frees, 84,649 bytes allocated
+==4218== 
+==4218== Thread 1:
+==4218== 288 bytes in 1 blocks are possibly lost in loss record 15 of 22
+==4218==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4218==    by 0x40138E4: allocate_dtv (dl-tls.c:322)
+==4218==    by 0x40138E4: _dl_allocate_tls (dl-tls.c:539)
+==4218==    by 0x53DA26E: allocate_stack (allocatestack.c:588)
+==4218==    by 0x53DA26E: pthread_create@@GLIBC_2.2.5 (pthread_create.c:539)
+==4218==    by 0x4EF2DC2: std::thread::_M_start_thread(std::shared_ptr<std::thread::_Impl_base>, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21)
+==4218==    by 0x403963: std::thread::thread<std::_Bind<std::_Mem_fn<void (LSADatabase::*)()> (LSADatabase*)>>(std::_Bind<std::_Mem_fn<void (LSADatabase::*)()> (LSADatabase*)>&&) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x4021EA: LSADatabase::LSADatabase() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x416BED: __static_initialization_and_destruction_0(int, int) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x416C17: _GLOBAL__sub_I__ZN6router10interfacesE (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41C5FC: __libc_csu_init (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x560F7CE: (below main) (libc-start.c:247)
+==4218== 
+==4218== 288 bytes in 1 blocks are possibly lost in loss record 16 of 22
+==4218==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4218==    by 0x40138E4: allocate_dtv (dl-tls.c:322)
+==4218==    by 0x40138E4: _dl_allocate_tls (dl-tls.c:539)
+==4218==    by 0x53DA26E: allocate_stack (allocatestack.c:588)
+==4218==    by 0x53DA26E: pthread_create@@GLIBC_2.2.5 (pthread_create.c:539)
+==4218==    by 0x4EF2DC2: std::thread::_M_start_thread(std::shared_ptr<std::thread::_Impl_base>, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21)
+==4218==    by 0x4137B9: std::thread::thread<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>>(std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>&&) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41159A: Interface::event_interface_up() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41C1BE: main (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218== 
+==4218== 288 bytes in 1 blocks are possibly lost in loss record 17 of 22
+==4218==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4218==    by 0x40138E4: allocate_dtv (dl-tls.c:322)
+==4218==    by 0x40138E4: _dl_allocate_tls (dl-tls.c:539)
+==4218==    by 0x53DA26E: allocate_stack (allocatestack.c:588)
+==4218==    by 0x53DA26E: pthread_create@@GLIBC_2.2.5 (pthread_create.c:539)
+==4218==    by 0x4EF2DC2: std::thread::_M_start_thread(std::shared_ptr<std::thread::_Impl_base>, void (*)()) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21)
+==4218==    by 0x4137B9: std::thread::thread<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>>(std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>&&) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x411634: Interface::event_interface_up() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218==    by 0x41C1BE: main (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
+==4218== 
+==4218== LEAK SUMMARY:
+==4218==    definitely lost: 0 bytes in 0 blocks
+==4218==    indirectly lost: 0 bytes in 0 blocks
+==4218==      possibly lost: 864 bytes in 3 blocks
+==4218==    still reachable: 82,540 bytes in 32 blocks
+==4218==         suppressed: 0 bytes in 0 blocks
+==4218== Reachable blocks (those to which a pointer was found) are not shown.
+==4218== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==4218== 
+==4218== For counts of detected and suppressed errors, rerun with: -v
+==4218== Use --track-origins=yes to see where uninitialised values come from
+==4218== ERROR SUMMARY: 10 errors from 10 contexts (suppressed: 0 from 0)
+Killed
