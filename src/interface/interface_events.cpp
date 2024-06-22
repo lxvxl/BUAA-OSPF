@@ -4,8 +4,10 @@
 #include "../../include/logger/logger.h"
 #include "../../include/global_settings/router.h"
 #include <functional>
-#define mark_state InterfaceState pre_state = this->state;
-#define print_state_log logger::state_transition_log(this, pre_state, this->state);
+#define event_pre_aspect InterfaceState pre_state = this->state;
+#define event_post_aspect if (pre_state != state) { \
+    logger::state_transition_log(this, pre_state, this->state);\ 
+    router::lsa_db.generate_router_lsa();}
 
 /**
  * 启动接口
@@ -13,15 +15,9 @@
  */
 void Interface::event_interface_up() {
     logger::event_log(this, "interface up");
-    mark_state
+    event_pre_aspect
 
     this->hello_timer = 1;
-    
-    this->send_thread = std::thread(std::bind(&Interface::send_thread_runner, this));
-    this->send_thread.detach();
-    this->recv_thread = std::thread(std::bind(&Interface::recv_thread_runner, this));
-    this->recv_thread.detach();
-
     //TODO：默认广播或NBMA网络
     if (this->rtr_priority == 0) {
         this->state = DROTHER;
@@ -29,7 +25,12 @@ void Interface::event_interface_up() {
         this->state = WAITING;
         this->wait_timer = this->dead_interval;
     }
-    print_state_log
+    
+    this->send_thread = std::thread(std::bind(&Interface::send_thread_runner, this));
+    this->send_thread.detach();
+    this->recv_thread = std::thread(std::bind(&Interface::recv_thread_runner, this));
+    this->recv_thread.detach();
+    event_post_aspect
 }
 
 /**
@@ -37,7 +38,7 @@ void Interface::event_interface_up() {
  */
 void Interface::event_wait_timer() {
     logger::event_log(this, "wait timer");
-    mark_state
+    event_pre_aspect
 
     if (this->state != InterfaceState::WAITING) {
         goto end;
@@ -52,7 +53,7 @@ void Interface::event_wait_timer() {
         this->state = InterfaceState::DROTHER;
     }
 end:
-    print_state_log
+    event_post_aspect
 }
 
 /**
@@ -60,7 +61,7 @@ end:
  */
 void Interface::event_backup_seen() {
     logger::event_log(this, "wait timer");
-    mark_state
+    event_pre_aspect
 
     if (this->state != InterfaceState::WAITING) {
         goto end;
@@ -76,23 +77,49 @@ void Interface::event_backup_seen() {
     }
     this->wait_timer = -1;
 end:
-    print_state_log
+    event_post_aspect
 }
 
 void Interface::event_neighbor_change() {
-    
+    logger::event_log(this, "neighbor change");
+    event_pre_aspect
+
+    elect_dr();
+    if (this->ip == this->dr) {
+        this->state = InterfaceState::DR;
+    } else if (this->ip == this->bdr) {
+        this->state = InterfaceState::BACKUP;
+    } else {
+        this->state = InterfaceState::DROTHER;
+    }
+    this->wait_timer = -1;
+end:
+    event_post_aspect
 }
 
 void Interface::event_loop_ind() {
-
+    logger::event_log(this, "loop ind");
+    event_pre_aspect
+    this->state = LOOPBACK;
+    event_post_aspect
 }
 
 void Interface::event_unloop_ind() {
-
+    logger::event_log(this, "unloop ind");
+    event_pre_aspect
+    this->state = DOWN;
+    event_post_aspect
 }
 
 void Interface::event_interface_down() {
-
+    logger::event_log(this, "interface down");
+    event_pre_aspect
+    this->state = DOWN;
+    for (Neighbor* neighbor : neighbors) {
+        delete neighbor;
+    }
+    neighbors.clear();
+    event_post_aspect
 }
 
 bool is_bdr_or_dr(uint32_t ip, uint32_t dr, uint32_t bdr) {
@@ -188,6 +215,8 @@ void Interface::elect_dr() {
     std::cout << ", New BDR: " << inet_ntoa({new_bdr}) << std::endl;
 
     for (auto neighbor : this->neighbors) {
-        neighbor->event_is_adj_ok();
+        if (neighbor->state >= _2WAY) {
+            neighbor->event_is_adj_ok();
+        }
     }
 }

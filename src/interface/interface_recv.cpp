@@ -4,6 +4,8 @@
 #include "../../include/global_settings/router.h"
 #include "../../include/neighbor/neighbor.h"
 #include "../../include/global_settings/router.h"
+#include "../../include/logger/logger.h"
+
 
 #include <functional>
 
@@ -33,8 +35,7 @@ void Interface::recv_thread_runner() {
         exit(EXIT_FAILURE);
     }
     // 捕获并打印报文
-    while (true) {
-        
+    while (state != DOWN) {
         // 接收报文
         memset(recv_buffer, 0, BUFFER_SIZE);
         ssize_t packet_len = recv(this->recv_socket_fd, recv_buffer, BUFFER_SIZE, 0);
@@ -74,6 +75,7 @@ void Interface::recv_thread_runner() {
                 printf("Error: illegal type");
         }
     }    
+    logger::event_log(this, "接收线程已关闭");
 }
 
 
@@ -95,11 +97,33 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
 
     //若邻居的hello包中有自己
     if (neighbor->state == NeighborState::INIT && hello_packet->has_neighbor(router::router_id)) {
-        neighbor->event_2way_received(interface);
+        neighbor->event_2way_received();
+    } else {
+        neighbor->event_1way_received();
+        return;
     }
-    //查看是否需要选举dr和bdr
-    if (hello_packet->backup_designated_router == saddr || (hello_packet->designated_router == saddr && hello_packet->backup_designated_router == 0)) {
+    //如果邻居宣告自己为 DR，且宣告BDR为 0.0.0.0，且接收接口状态机的状态为 Waiting，执行事件BackupSeen。
+    if (hello_packet->designated_router == neighbor->ip 
+            && hello_packet->backup_designated_router == inet_addr("0.0.0.0") 
+            && interface->state == WAITING) {
         interface->event_backup_seen();
+        return;
+    }
+    //否则，如果以前不宣告的邻居宣告自己为 DR，或以前宣告的邻居现在不宣告自己为 DR，接收接口状态机调度执行事件NeighborChange。
+    if ((hello_packet->designated_router == neighbor->ip) ^ (neighbor->dr == neighbor->ip)) {
+        interface->event_neighbor_change();
+        return;
+    }
+    //如果邻居宣告自己为 BDR，且接收接口状态机的状态为 Waiting，接收接口状态机调度执行事件 BackupSeen。
+    if (hello_packet->backup_designated_router == neighbor->ip 
+            && interface->state == WAITING) {
+        interface->event_backup_seen();
+        return;
+    }
+    //否则，如果以前不宣告的邻居宣告自己为 BDR，或以前宣告的邻居现在不宣告自己 BDR，接收接口状态机调度执行事件 NeighborChange。
+    if ((hello_packet->backup_designated_router == neighbor->ip) ^ (neighbor->bdr == neighbor->ip)) {
+        interface->event_neighbor_change();
+        return;
     }
 }
 
@@ -118,7 +142,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
         case _2WAY:
             return;
         case INIT:
-            neighbor->event_2way_received(interface);
+            neighbor->event_2way_received();
             if (neighbor->state == _2WAY) {
                 return;
             }
@@ -138,6 +162,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 return;
             }
             //确定主从
+            neighbor->event_negotiation_done();
             if (ntohl(dd_packet->header.router_id) > ntohl(router::router_id)) {
                 neighbor->b_MS = 0;
                 neighbor->dd_sequence_number = ntohl(dd_packet->dd_sequence_number);
@@ -148,7 +173,6 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 neighbor->b_MS = 1;
                 neighbor->b_I = 0;
             }
-            neighbor->event_negotiation_done();
             break;
         case EXCHANGE:
             //主机丢弃所收到的重复 DD 包；从机收到重复的 DD 包时，则应当重发前一个 DD 包
@@ -198,6 +222,17 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             break;
         case LOADING:
         case FULL:
+            // 这时候只可能收到重复的包。如果不重复，生成seq mismatch事件。否则，从机重发报文。
+            if (dd_packet->b_I == last_dd->b_I
+                    && dd_packet->b_M == last_dd->b_M
+                    && dd_packet->b_MS == last_dd->b_MS
+                    && dd_packet->dd_sequence_number == last_dd->dd_sequence_number) {
+                if (!neighbor->b_MS) {
+                    interface->send_last_dd_packet(neighbor);
+                }
+            } else {
+                neighbor->event_seq_num_mismatch();
+            }
         default:
             break;
     }
@@ -229,6 +264,7 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
     // 在此处理LSU报文
     LSAHeader *next_v_lsa = (LSAHeader*)((uint8_t*)lsu_packet + sizeof(OSPFLSU));
     std::vector<LSAHeader*> received_v_lsas;
+    Neighbor *neighbor = interface->get_neighbor_by_ip(saddr);
     for (int i = 0; i < ntohl(lsu_packet->lsa_num); i++) {
         received_v_lsas.push_back(next_v_lsa);
         //更新数据库，跳转到下一条lsa
@@ -246,12 +282,41 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
         }
     }
     //如果是发给自己的，说明是在Loading阶段
-    if (daddr == interface->ip) {
-        for (auto lsa : received_v_lsas) {
-            
+    for (LSAHeader* v_lsa : received_v_lsas) {
+        LSADatabase& lsa_db = router::lsa_db;
+        LSAHeader *r_lsa = lsa_db.get_lsa(v_lsa);
+        //如果该实例比数据库中新或者数据库中不存在实例
+        if (r_lsa == NULL || v_lsa->compare(r_lsa) < 0) {
+            //如果该实例收到保护
+            if (lsa_db.protected_lsas.find(r_lsa) != lsa_db.protected_lsas.end()) {
+                continue;
+            }
+            r_lsa = lsa_db.update(v_lsa);
+            //查看该实例是否是请求的LSA。如果是，将其删除
+            if (daddr == interface->ip && neighbor->rm_from_reqs(v_lsa)) {
+                continue;
+            }
+            //否则，泛洪，将其从重传列表中删除
+            InterfaceState sender_state = interface->dr == saddr ? DR :
+                                          interface->bdr == saddr ? BACKUP: DROTHER;
+            LSADatabase::flood(r_lsa, interface, sender_state);
+            neighbor->lsu_retransmit_manager.remove_lsa(r_lsa);
+            interface->send_lsack_packet(v_lsa, daddr);
+        } else { //数据库中存在更新的实例或者相同的实例
+            if (neighbor->rm_from_reqs(v_lsa)) { //如果这个实例正在请求列表中，生成BadLSReq事件
+                neighbor->event_bad_lsreq();
+                return;
+            }
+            //如果存在相同实例
+            if (r_lsa->compare(v_lsa) == 0) {
+                neighbor->lsu_retransmit_manager.remove_lsa(v_lsa);//隐含确认
+                interface->send_lsack_packet(v_lsa, daddr);
+            } else {
+                //该数据库副本没有在最近MinLSArrival内被LSU发送，将其立刻发送给邻居
+                interface->send_lsu_packet(r_lsa, saddr);
+            }
         }
     }
-    interface->send_lsack_packet(received_v_lsas, saddr);
 }
 
 void handle_recv_lsack(OSPFLSAck *lsack_packet, Interface *interface) {

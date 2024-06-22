@@ -225,5 +225,21 @@ void NetworkLSA::ntoh() {
     this->header.ntoh();
 }
 
+NetworkLSA* NetworkLSA::generate(Interface *interface) {
+    std::vector<uint32_t> attached_routers;
+    attached_routers.push_back(router::router_id);
+    for (Neighbor *neighbor : interface->neighbors) {
+        attached_routers.push_back(neighbor->router_id);
+    }
+    uint16_t length = sizeof(NetworkLSA) + attached_routers.size() * sizeof(uint32_t);
+    NetworkLSA *network_lsa = (NetworkLSA*)malloc(length);
+    memset(network_lsa, 0, length);
+    network_lsa->network_mask = interface->network_mask;
 
+    for (int i = 0; i < attached_routers.size(); i++) {
+        network_lsa->attached_routers[i] = attached_routers[i];
+    }
+    ((LSAHeader*)network_lsa)->fill(NETWORK, interface->ip, router::lsa_db.get_seq_num(), length);
+    return network_lsa;
+}
 

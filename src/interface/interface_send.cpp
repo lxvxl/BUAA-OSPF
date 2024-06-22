@@ -1,6 +1,7 @@
 #include "../../include/packet/packets.h"
 #include "../../include/interface/interface.h"
 #include "../../include/global_settings/common.h"
+#include "../../include/logger/logger.h"
 #include <functional>
 
 void Interface::send_thread_runner() {
@@ -16,7 +17,7 @@ void Interface::send_thread_runner() {
         perror("[Thread]SendHelloPacket: setsockopt");
     }
 
-    while (true) {
+    while (state != DOWN) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         this->hello_timer--;
         this->wait_timer--;
@@ -38,14 +39,18 @@ void Interface::send_thread_runner() {
 
             //查看dd报文重发
             neighbor->dd_retransmit_timer--;
-            if (neighbor->dd_retransmit_timer == 0) {
+            if (neighbor->dd_retransmit_timer == 0 && (neighbor->state == EXSTART || neighbor->state == EXCHANGE)) {
                 this->send_last_dd_packet(neighbor);
             }
 
             //查看LSR报文重传
-            neighbor->lsr_retransmit_timer--;
-            if (neighbor->lsr_retransmit_timer == 0 && !neighbor->req_v_lsas.empty()) {
-                this->send_lsr_packet(neighbor);
+            if (neighbor->state == LOADING || neighbor->state == EXCHANGE) {
+                neighbor->lsr_retransmit_timer--;
+                if (neighbor->req_v_lsas.empty()) {
+                    neighbor->event_loading_done();
+                } else if (neighbor->lsr_retransmit_timer == 0) {
+                    this->send_lsr_packet(neighbor);
+                }
             }
 
             //查看LSU报文重传
@@ -57,6 +62,7 @@ void Interface::send_thread_runner() {
             }
         }
     }
+    logger::event_log(this, "发送线程已关闭");
 }
 
 void Interface::send_hello_packet() {
@@ -152,6 +158,13 @@ void Interface::send_lsu_packet(std::vector<LSAHeader*>& r_lsas, uint32_t dst_ad
     //}
 }
 
+void Interface::send_lsu_packet(LSAHeader *r_lsa, uint32_t dst_addr) {
+    std::vector<LSAHeader*> r_lsas;
+    r_lsas.push_back(r_lsa);
+    send_lsu_packet(r_lsas, dst_addr);
+}
+
+
 void Interface::send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_addr) {
     struct sockaddr_in dst_sockaddr;
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
@@ -168,4 +181,11 @@ void Interface::send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_
         perror("[Thread]Send: sendto");
     }
 }
+
+void Interface::send_lsack_packet(LSAHeader *v_lsa, uint32_t dst_addr) {
+    std::vector<LSAHeader*> v_lsas;
+    v_lsas.push_back(v_lsa);
+    send_lsack_packet(v_lsas, dst_addr);
+}
+
 

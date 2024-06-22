@@ -42,14 +42,6 @@ struct LSAHeader {
     uint16_t    ls_checksum;           // 校验和
     uint16_t    length;                // LSA总长度
 
-    enum Relation {
-        SAME,
-        NOT_SAME,
-        NEWER,
-        OLDER,
-    };
-    //Relation compare(LSAHeader *another);
-
     void fill(LSType type, uint32_t link_state_id, uint32_t ls_seq_num, uint16_t length);
     void hton();
     void ntoh();
@@ -92,6 +84,7 @@ struct NetworkLSA {
     uint32_t attached_routers[];
     void hton();
     void ntoh();
+    static NetworkLSA* generate(Interface *interface);
 };
 
 

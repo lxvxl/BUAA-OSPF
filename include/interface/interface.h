@@ -75,7 +75,9 @@ struct Interface {
     void        send_last_dd_packet(Neighbor *neighbor);
     void        send_lsr_packet(Neighbor *neighbor);
     void        send_lsu_packet(std::vector<LSAHeader*>& r_lsas, uint32_t dst_addr);
+    void        send_lsu_packet(LSAHeader *r_lsa, uint32_t dst_addr);
     void        send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_addr);
+    void        send_lsack_packet(LSAHeader *v_lsa, uint32_t dst_addr);
 
     void        elect_dr();
     void        recv_thread_runner();

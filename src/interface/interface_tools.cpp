@@ -27,18 +27,10 @@ Interface::Interface(const char *name)
 
 void Interface::clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) {
     for (auto neighbor : neighbors) {
-        //清除待请求的lsa
-        for (int i = neighbor->req_v_lsas.size() - 1; i >= 0; i--) {
-            LSAHeader::Relation rel = neighbor->req_v_lsas[i]->compare(old_r_lsa);
-            if (rel == LSAHeader::OLDER || rel == LSAHeader::SAME) {
-                delete neighbor->req_v_lsas[i];
-                neighbor->req_v_lsas.erase(neighbor->req_v_lsas.begin() + i);
-            }
-        }
         //清除待发送的dd包中的相应lsa。如果new_lsa不为空，则使用new_lsa来代替原有的lsa。
         for (int i = neighbor->dd_r_lsa_headers.size() - 1; i >= 0; i--) {
-            LSAHeader::Relation rel = neighbor->dd_r_lsa_headers[i]->compare(old_r_lsa);
-            if (rel == LSAHeader::OLDER || rel == LSAHeader::SAME) {
+            //如果要清除的实例比dd列表中的实例相同或者新
+            if (old_r_lsa->compare(neighbor->dd_r_lsa_headers[i]) <= 0) {
                 if (new_r_lsa == NULL) {
                     neighbor->dd_r_lsa_headers.erase(neighbor->dd_r_lsa_headers.begin() + i);
                     if (neighbor->dd_recorder >= i) {

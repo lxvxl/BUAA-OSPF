@@ -54,6 +54,7 @@ struct Neighbor {
 
     std::vector<LSAHeader*> req_v_lsas;       //需要请求的LSA。这个要单独管理内存！
 
+
     struct LSURetransmitManager {
         std::map<LSAHeader*, int> timer;        //r_lsa -> time
         void step_one();
@@ -64,13 +65,14 @@ struct Neighbor {
 
     Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip);
     Neighbor();
+    ~Neighbor();
 
     //从邻居接收一个Hello包
     void            event_hello_received();
     //将以 HelloInterval 秒的间隔向邻居发送 Hello 包     
     void            event_start();
     //在邻居的 Hello 包中包含了路由器自身 
-    void            event_2way_received(Interface *interface); 
+    void            event_2way_received(); 
     //已经协商好主从关系，并交换了 DD 序号
     void            event_negotiation_done();  
     //已成功交换了完整的 DD 包
@@ -84,7 +86,7 @@ struct Neighbor {
     //接收到的 DD 包出现下列情况：a）含有意外的 DD 序号；b）意外地设定了 Init 位；c）与上一个接收到的 DD 包有着不同的选项域。
     void            event_seq_num_mismatch();
     //从邻居接收到 Hello 包，但并不包含路由器自身。这说明与该邻居的通讯不再是双向。
-    void            event_1way();           
+    void            event_1way_received();           
     //这说明现在不可能与该邻居有任何通讯，强制转换邻居状态到 Down
     void            event_kill_nbr();       
     //非活跃记时器被激活。这说明最近没有从邻居接收到 Hello 包。强制转换邻居状态到 Down。
@@ -92,8 +94,8 @@ struct Neighbor {
     //由下层协议说明，邻居不可到达。
     void            event_ll_down();     
 
-    void            dd_reset_lsas();
     bool            dd_has_more_lsa();
     int             fill_lsa_headers(LSAHeader *addr);
+    bool            rm_from_reqs(LSAHeader *v_lsa);
 };
 #endif 
