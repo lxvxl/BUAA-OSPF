@@ -211,8 +211,11 @@ void Interface::elect_dr() {
     bdr = new_bdr;
 
     // Print the results for debugging purposes
-    std::cout << "New DR: " << inet_ntoa({new_dr});
-    std::cout << ", New BDR: " << inet_ntoa({new_bdr}) << std::endl;
+    std::string log_str = "New DR: ";
+    log_str += inet_ntoa({new_dr});
+    log_str += ", New BDR: ";
+    log_str += inet_ntoa({new_bdr});
+    logger::other_log(this, log_str);
 
     for (auto neighbor : this->neighbors) {
         if (neighbor->state >= _2WAY) {

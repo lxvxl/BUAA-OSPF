@@ -18,7 +18,7 @@ void handle_recv_lsack(OSPFLSAck *lsa_packet, Interface *interface);
 
 
 void Interface::recv_thread_runner() {
-    printf("initing recv thread\n");
+    logger::other_log(this, "initing recv thread");
     // 创建原始套接字
     if ((this->recv_socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP))) < 0) {
         perror("Socket creation failed");
@@ -73,7 +73,7 @@ void Interface::recv_thread_runner() {
                 handle_recv_lsack((struct OSPFLSAck*)ospf_header, this);
                 break;
             default:
-                printf("Error: illegal type");
+                logger::other_log(this, "unmatched packet type");
         }
         lock.unlock();
     }    
@@ -87,7 +87,7 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
         || ntohs(hello_packet->hello_interval) != interface->hello_interval
         || ntohl(hello_packet->dead_interval) != interface->dead_interval
         ) {
-        printf("不匹配的hello报文");
+        logger::other_log(interface, "unmatched hello packet");
     }
 
     Neighbor *neighbor = interface->get_neighbor_by_id(hello_packet->header.router_id);
@@ -156,12 +156,12 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                     && dd_packet->b_M == last_dd->b_M
                     && dd_packet->b_MS == last_dd->b_MS
                     && dd_packet->dd_sequence_number == last_dd->dd_sequence_number) {
-                printf("dd refused: repeated paket\n");
+                logger::other_log(interface, "dd refused: repeated packet");
                 return;
             } 
             memcpy(last_dd, dd_packet, 2048);
             if (dd_packet->get_lsa_num() != 0 || !dd_packet->b_I || !dd_packet->b_M || !dd_packet->b_MS) {
-                std::cout<<"dd refused: exchange wrong format"<<dd_packet->get_lsa_num()<<std::endl;
+                logger::other_log(interface, "dd refused: wrong format during EXSTART state");
                 return;
             }
             //确定主从
@@ -192,7 +192,6 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             //主从位不匹配或意外设置初始位或选项域与之前不同
             if (!(dd_packet->b_MS ^ neighbor->b_MS) || dd_packet->b_I || last_dd->options != dd_packet->options) {
                 logger::event_log(interface, "received unmatched MS or I or options in DD packet");
-                printf("%d %d; %d; %d, %d\n", dd_packet->b_MS, neighbor->b_MS, dd_packet->b_I, last_dd->options, dd_packet->options);
                 neighbor->event_seq_num_mismatch();
                 return;
             }

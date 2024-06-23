@@ -270,10 +270,12 @@ void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>
 }
 
 void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* lsa) {
-    for (auto it = timer.begin(); it != timer.end(); ++it) {
+    for (auto it = timer.begin(); it != timer.end();) {
         //清除与lsa相同或者比lsa更老的实例
         if (it->first->compare(lsa) >= 0) {
-            timer.erase(it);
+            timer.erase(it++);
+        } else {
+            it++;
         }
     }
 }

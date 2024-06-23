@@ -7,7 +7,7 @@
 #include <mutex>
 
 void Interface::send_thread_runner() {
-    printf("initing hello thread\n");
+    logger::other_log(this, "initing hello thread");
     if ((this->send_socket_fd = socket(AF_INET, SOCK_RAW, 89)) < 0) {
         perror("[Thread]SendHelloPacket: socket_fd init");
     }
