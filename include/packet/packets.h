@@ -74,6 +74,8 @@ struct RouterLSA {
 
     void hton();
     void ntoh();
+    void show();
+    int  get_link_num();
 
     static RouterLSA* generate();
 };
@@ -85,6 +87,8 @@ struct NetworkLSA {
     uint32_t attached_routers[];
     void hton();
     void ntoh();
+    void show();
+    int  get_routers_num();
     static NetworkLSA* generate(Interface *interface);
 };
 

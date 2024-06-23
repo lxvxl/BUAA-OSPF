@@ -227,6 +227,24 @@ void RouterLSA::ntoh() {
     this->header.ntoh();
 }
 
+void RouterLSA::show() {
+    std::cout<<std::endl<<"=====RouterLSA====="<<std::endl;
+    this->header.show();
+    for (int i = 0; i < get_link_num(); i++) {
+        std::cout<<"\tlink id: "<<inet_ntoa({links[i].link_id})<<std::endl;
+        std::cout<<"\tlink_data: "<<inet_ntoa({links[i].link_data})<<std::endl;
+        std::cout<<"\ttype: "<<links[i].type<<std::endl;
+        std::cout<<"\tmetric: "<<links[i].type<<std::endl;
+    }
+    std::cout<<std::endl;
+}
+
+int RouterLSA::get_link_num() {
+    return (header.length - sizeof(RouterLSA)) / sizeof(RouterLSALink);
+}
+
+
+
 void NetworkLSA::hton() {
     this->header.hton();
 }
@@ -253,3 +271,15 @@ NetworkLSA* NetworkLSA::generate(Interface *interface) {
     return network_lsa;
 }
 
+void NetworkLSA::show() {
+    std::cout<<std::endl<<"=====NetworkLSA====="<<std::endl;
+    this->header.show();
+    for (int i = 0; i < get_routers_num(); i++) {
+        std::cout<<"\tlink id: "<<inet_ntoa({attached_routers[i]})<<std::endl;
+    }
+    std::cout<<std::endl;
+}
+
+int NetworkLSA::get_routers_num() {
+    return (header.length - sizeof(NetworkLSA)) / sizeof(uint32_t);
+}

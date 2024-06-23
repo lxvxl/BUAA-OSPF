@@ -195,3 +195,11 @@ void LSADatabase::generate_network_lsa(Interface *interface) {
     flood((LSAHeader*)network_lsa, NULL, DROTHER);
 }
 
+void LSADatabase::show() {
+    for (RouterLSA *lsa : router_lsas) {
+        lsa->show();
+    }
+    for (NetworkLSA *lsa : network_lsas) {
+        lsa->show();
+    }
+}

@@ -41,6 +41,7 @@ struct LSADatabase {
     void                    generate_network_lsa(Interface *interface);
     //需要被泛洪的LSA。
     static void             flood(LSAHeader *r_lsa, Interface* origin, InterfaceState sender_state);
+    void                    show();
 };
 
 #endif 
