@@ -176,7 +176,7 @@ RouterLSA *RouterLSA::generate() {
                 }
                 continue;
             }
-            //如果路由器与 DR 完全邻接，加入类型2连接
+            //如果路由器与 DR 完全邻接，加入类型3连接
             if (interface->get_neighbor_by_ip(interface->dr)->state == FULL) {
                 links.emplace_back(RouterLSALink(interface->dr, 
                                                 interface->ip, 

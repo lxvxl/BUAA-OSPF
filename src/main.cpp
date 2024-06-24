@@ -18,6 +18,10 @@ int main() {
             std::unique_lock<std::mutex> lock(router::mutex);
             router::lsa_db.show();
             lock.unlock();
+        } else if (inst == "dis routing") {
+            std::unique_lock<std::mutex> lock(router::mutex);
+            router::routing_table.show();
+            lock.unlock();    
         } else if (inst == "quit") {
             break;
         } else {

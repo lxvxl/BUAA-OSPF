@@ -112,6 +112,7 @@ LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
             }
             router_lsas.push_back(new_r_lsa);
             protected_lsas[(LSAHeader*)new_r_lsa] = 1;
+            router::routing_table.generate(router_lsas, network_lsas);
             return (LSAHeader*)new_r_lsa;
         }
         case LSType::NETWORK: { 
@@ -122,6 +123,7 @@ LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
             }
             network_lsas.push_back(new_r_lsa);
             protected_lsas[(LSAHeader*)new_r_lsa] = 1;
+            router::routing_table.generate(router_lsas, network_lsas);
             return (LSAHeader*)new_r_lsa;
         }
         default:
