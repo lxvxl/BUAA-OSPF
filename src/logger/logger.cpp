@@ -7,7 +7,7 @@
 
 namespace {
     bool terminal_logging_enabled = true;
-    std::ofstream log_file("log.txt", std::ios::app);
+    std::ofstream log_file("log.txt", std::ios::trunc);
     std::mutex log_mutex; // To ensure thread-safe logging
 
     std::map<InterfaceState, std::string> interface_state_map = {

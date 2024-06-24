@@ -105,7 +105,7 @@ void RouterNode::show() {
 
 void NetNode::show() {
     std::cout<<"Net["<<inet_ntoa({this->id});
-    std::bitset<32> binary_mask(mask);
+    std::bitset<32> binary_mask(ntohl(mask));
     int prefix_length = 0;
     for (int i = 31; i >= 0; --i) {
         if (binary_mask[i]) {

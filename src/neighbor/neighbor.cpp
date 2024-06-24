@@ -274,6 +274,7 @@ void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* lsa) {
         //清除与lsa相同或者比lsa更老的实例
         if (it->first->compare(lsa) >= 0) {
             timer.erase(it++);
+            return;
         } else {
             it++;
         }

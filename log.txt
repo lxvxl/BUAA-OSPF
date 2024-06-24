@@ -1,0 +1,27 @@
+[Interface enp0s3]: interface up
+[Interface enp0s3]: initing hello thread
+[Interface enp0s3]: initing recv thread
+[Interface enp0s3]: DOWN --> WAITING
+[Neighbor 192.168.64.30]: hello_received
+[Neighbor 192.168.64.30]: DOWN --> INIT
+[Neighbor 192.168.64.30]: 2way_received
+[Interface enp0s3]: neighbor change
+[Interface enp0s3]: New DR: 192.168.64.30, New BDR: 192.168.64.20
+[Neighbor 192.168.64.30]: adj_ok?
+[Neighbor 192.168.64.30]: 2WAY --> EXSTART
+[Interface enp0s3]: WAITING --> BACKUP
+[Neighbor 192.168.64.30]: INIT --> EXSTART
+[Neighbor 192.168.64.30]: negotiation_done
+[Neighbor 192.168.64.30]: EXSTART --> EXCHANGE
+[Neighbor 192.168.64.30]: exchange done
+[Neighbor 192.168.64.30]: EXCHANGE --> LOADING
+[Neighbor 192.168.64.30]: bad ls req
+[Neighbor 192.168.64.30]: LOADING --> EXSTART
+[Neighbor 192.168.64.30]: hello_received
+[Neighbor 192.168.64.30]: 2way_received
+[Neighbor 192.168.64.30]: hello_received
+[Neighbor 192.168.64.30]: 2way_received
+[Neighbor 192.168.64.30]: hello_received
+[Neighbor 192.168.64.30]: 2way_received
+[Neighbor 192.168.64.30]: hello_received
+[Neighbor 192.168.64.30]: 2way_received
