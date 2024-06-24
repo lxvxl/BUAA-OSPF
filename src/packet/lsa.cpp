@@ -220,10 +220,10 @@ void RouterLSA::hton() {
 }
 
 void RouterLSA::ntoh() {
+    this->link_num = ntohs(this->link_num);
     for (int i = 0; i < this->link_num; i++) {
         this->links[i].metric = ntohs(this->links[i].metric);
     }
-    this->link_num = ntohs(this->link_num);
     this->header.ntoh();
 }
 
@@ -276,6 +276,7 @@ NetworkLSA* NetworkLSA::generate(Interface *interface) {
 void NetworkLSA::show() {
     std::cout<<std::endl<<"=====NetworkLSA====="<<std::endl;
     this->header.show();
+    std::cout<<"mask: "<<inet_ntoa({network_mask})<<std::endl;
     for (int i = 0; i < get_routers_num(); i++) {
         std::cout<<"\tlink id: "<<inet_ntoa({attached_routers[i]})<<std::endl;
     }

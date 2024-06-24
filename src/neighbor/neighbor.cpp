@@ -143,6 +143,7 @@ void Neighbor::event_bad_lsreq() {
     this->b_M = 1;
     this->b_I = 1;
     this->state = EXSTART;
+    interface->send_dd_packet(this);
     event_post_aspect
 }   
 
@@ -202,6 +203,7 @@ void Neighbor::event_seq_num_mismatch() {
     this->b_M = 1;
     this->b_I = 1;
     this->state = EXSTART;
+    interface->send_dd_packet(this);
     event_post_aspect
 }  
 
@@ -272,11 +274,12 @@ void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>
 void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* lsa) {
     for (auto it = timer.begin(); it != timer.end();) {
         //清除与lsa相同或者比lsa更老的实例
+        printf("%d %d\n", it->first, lsa);
         if (it->first->compare(lsa) >= 0) {
-            timer.erase(it++);
+            timer.erase(it++->first);
             return;
         } else {
-            it++;
+            ++it;
         }
     }
 }

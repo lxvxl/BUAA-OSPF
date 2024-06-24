@@ -114,7 +114,7 @@ void NetNode::show() {
             break;
         }
     }
-    std::cout<<"/"<<prefix_length<<"]";
+    std::cout<<" "<<inet_ntoa({this->mask})<<"]";
 }
 
 void RoutingTable::show() {

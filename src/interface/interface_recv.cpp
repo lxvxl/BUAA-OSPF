@@ -279,9 +279,9 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
                 ((RouterLSA*)next_v_lsa)->ntoh();
                 next_v_lsa = (LSAHeader*)((uint8_t*)next_v_lsa + next_v_lsa->length);
                 break;
-            case LSType::NETWORK:
+            case LSType::NETWORK:{
                 ((NetworkLSA*)next_v_lsa)->ntoh();
-                next_v_lsa = (LSAHeader*)((uint8_t*)next_v_lsa + next_v_lsa->length);
+                next_v_lsa = (LSAHeader*)((uint8_t*)next_v_lsa + next_v_lsa->length);}
                 break;
             default:
                 break;
