@@ -4,6 +4,8 @@
 
 #include <unordered_map>
 #include <queue>
+#include <bitset>
+
 RouterNode* RoutingTable::get_router_node(uint32_t id) {
     if (router_node_map.find(id) == router_node_map.end()) {
         router_node_map[id] = new RouterNode(id);
@@ -102,7 +104,17 @@ void RouterNode::show() {
 }
 
 void NetNode::show() {
-    std::cout<<"Net["<<inet_ntoa({this->id})<<"]";
+    std::cout<<"Net["<<inet_ntoa({this->id});
+    std::bitset<32> binary_mask(mask);
+    int prefix_length = 0;
+    for (int i = 31; i >= 0; --i) {
+        if (binary_mask[i]) {
+            ++prefix_length;
+        } else {
+            break;
+        }
+    }
+    std::cout<<"/"<<prefix_length<<"]";
 }
 
 void RoutingTable::show() {

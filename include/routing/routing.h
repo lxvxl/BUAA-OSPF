@@ -16,6 +16,7 @@ class Node {
         std::unordered_map<Node*, uint16_t> neighbor_nodes; //描述了邻居-权重之间的关系
         Node(bool is_router, uint32_t id) : is_router(is_router), id(id) {};
         virtual void show() = 0;
+        virtual ~Node() = default;
 };
 
 class RouterNode : public Node {
@@ -23,6 +24,7 @@ class RouterNode : public Node {
         std::unordered_map<Node*, uint16_t> neighbor_2_interface;
         RouterNode(uint32_t id) : Node(true, id) {};
         void show() override;
+        ~RouterNode() override = default;
 };
 
 class NetNode : public Node {
@@ -30,6 +32,7 @@ class NetNode : public Node {
         uint32_t    mask;
         NetNode(uint32_t ip, uint32_t mask) : Node(false, ip), mask(mask) {};
         void show() override;
+        ~NetNode() override = default;
 };
 
 

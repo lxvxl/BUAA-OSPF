@@ -5,6 +5,7 @@
 #include <iostream>
 #include "../include/global_settings/router.h"
 #include "../include/global_settings/common.h"
+#include "../include/logger/logger.h"
 
 int main() {
     Interface interface("enp0s3");
@@ -24,6 +25,10 @@ int main() {
             lock.unlock();    
         } else if (inst == "quit") {
             break;
+        } else if (inst == "disable log") { 
+            logger::enable_terminal_logging(false);
+        } else if (inst == "enable log") {
+            logger::enable_terminal_logging(true);
         } else {
             std::cout<<"illegal instruction!"<<std::endl;
         }
