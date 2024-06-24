@@ -233,8 +233,10 @@ void RouterLSA::show() {
     for (int i = 0; i < get_link_num(); i++) {
         std::cout<<"\tlink id: "<<inet_ntoa({links[i].link_id})<<std::endl;
         std::cout<<"\tlink_data: "<<inet_ntoa({links[i].link_data})<<std::endl;
-        std::cout<<"\ttype: "<<links[i].type<<std::endl;
-        std::cout<<"\tmetric: "<<links[i].type<<std::endl;
+        printf("\ttype: %d\n", links[i].type);
+        printf("\tmetric: %hd\n", links[i].metric);
+        //std::cout<<"\ttype: "<<links[i].type<<std::endl;
+        //std::cout<<"\tmetric: "<<links[i].type<<std::endl;
     }
     std::cout<<std::endl;
 }

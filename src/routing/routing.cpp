@@ -81,15 +81,15 @@ void RoutingTable::dijkstra() {
             }
         }
     }
-
     // Fill the next_step map
     for (auto& pair : distances) {
         Node* node = pair.first;
-        if (node == me) {
+        if (node == me || previous.find(node) == previous.end()) {
             continue;
         }
 
         Node* step = node;
+
         while (previous[step] != me) {
             step = previous[step];
         }
@@ -98,11 +98,11 @@ void RoutingTable::dijkstra() {
 }
 
 void RouterNode::show() {
-    std::cout<<"Router["<<id<<"]";
+    std::cout<<"Router["<<inet_ntoa({this->id})<<"]";
 }
 
 void NetNode::show() {
-    std::cout<<"Net["<<id<<"]";
+    std::cout<<"Net["<<inet_ntoa({this->id})<<"]";
 }
 
 void RoutingTable::show() {
