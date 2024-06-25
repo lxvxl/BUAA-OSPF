@@ -10,8 +10,8 @@
 int main() {
     Interface interface1("enp0s3", inet_addr("192.168.64.20"), inet_addr("255.255.255.0"));
     interface1.event_interface_up();
-    //Interface interface2("enp0s9", inet_addr("192.168.65.20"), inet_addr("255.255.255.0"));
-    //interface2.event_interface_up();
+    Interface interface2("enp0s9", inet_addr("192.168.65.20"), inet_addr("255.255.255.0"));
+    interface2.event_interface_up();
     while (true)
     {   
         std::string inst;

@@ -2,6 +2,7 @@
 #include "../../include/interface/interface.h"
 #include "../../include/global_settings/common.h"
 #include "../../include/global_settings/router.h"
+#include "../../include/logger/logger.h"
 
 Neighbor* Interface::get_neighbor_by_id(uint32_t router_id) {
     for (auto n : neighbors) {
@@ -52,6 +53,7 @@ void Interface::clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) {
 }
 
 void Interface::transmit_packet(char packet[], int length) {
+    logger::other_log(this, "transmit packet");
     if (this->transmit_socket_fd == 0) {
         if ((this->transmit_socket_fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
             perror("socket creation failed");
@@ -70,7 +72,7 @@ void Interface::transmit_packet(char packet[], int length) {
     struct sockaddr_in dest_addr;
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(0); // 端口号在IP头中
-    dest_addr.sin_addr.s_addr = this->ip;
+    dest_addr.sin_addr.s_addr = ((struct iphdr*)packet)->daddr;
 
     // 发送数据包
     if (sendto(this->transmit_socket_fd, packet, length, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
@@ -79,4 +81,5 @@ void Interface::transmit_packet(char packet[], int length) {
         this->transmit_socket_fd = 0;
         return;
     }
+    logger::other_log(this, "successfully transmitted");
 }

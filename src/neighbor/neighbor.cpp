@@ -260,14 +260,12 @@ bool Neighbor::dd_has_more_lsa() {
 }
 
 void Neighbor::LSURetransmitManager::step_one() {
-    printf("######thread %d visit step one\n", std::this_thread::get_id());
     for (auto it = timer.begin(); it != timer.end(); ++it) {
         it->second--;
     }
 }
 
 void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>& r_lsas) {
-    printf("######thread %d visit get retransmit lsas\n", std::this_thread::get_id());
     for (auto& pair : timer) {
         if (pair.second <= 0) {
             r_lsas.push_back(pair.first);
@@ -277,10 +275,8 @@ void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>
 }
 
 void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* r_lsa) {
-    printf("######thread %d visit %x's remove lsa and try to remove %x\n", std::this_thread::get_id(), this, r_lsa);
     for (auto it = timer.begin(); it != timer.end();) {
         //清除与lsa相同或者比lsa更老的实例
-        printf("%d %d\n", it->first, r_lsa);
         if (it->first->compare(r_lsa) >= 0) {
             timer.erase(it++->first);
             return;
@@ -291,6 +287,5 @@ void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* r_lsa) {
 }
 
 void Neighbor::LSURetransmitManager::add_lsa(LSAHeader* r_lsa) {
-    printf("######thread %d visit add lsa\n", std::this_thread::get_id());
     timer[r_lsa] = 5;
 }
