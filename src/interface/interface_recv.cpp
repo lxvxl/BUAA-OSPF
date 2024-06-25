@@ -141,7 +141,6 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
     //    return;
     //}
     // 在此处理DD报文
-    //std::cout<<"receive a dd"<<std::endl;
     //dd_packet->show();
     Neighbor *neighbor = interface->get_neighbor_by_id(dd_packet->header.router_id);
     if (neighbor == NULL) {
@@ -275,14 +274,10 @@ void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface) {
             && neighbor->state != FULL) {
         return;
     }
-    std::cout<<"LSR received\n";
-    router::lsa_db.show();
-    std::cout<<"db_end\n";
     for (int i = 0; i < lsr_packet->get_req_num(); i++) {
         LSAHeader *lsa = router::lsa_db.get_lsa(ntohl(lsr_packet->reqs[i].ls_type), 
                                                 lsr_packet->reqs[i].link_state_id, 
                                                 lsr_packet->reqs[i].advertising_router);
-        std::cout<<ntohl(lsr_packet->reqs[i].ls_type)<<inet_ntoa({lsr_packet->reqs[i].link_state_id})<<inet_ntoa({lsr_packet->reqs[i].link_state_id})<<std::endl;
         if (lsa == NULL) {
             neighbor->event_bad_lsreq();
             return;
@@ -353,20 +348,13 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
 
 void handle_recv_lsack(OSPFLSAck *lsack_packet, Interface *interface) {
     Neighbor *neighbor = interface->get_neighbor_by_id(lsack_packet->header.router_id);
-    lsack_packet->header.show();
     if (neighbor == NULL) {
         return;
-        std::cout<<"null neighbor!"<<inet_ntoa({lsack_packet->header.router_id});
-        for (auto neighbor : interface->neighbors) {
-            std::cout<<"  "<<inet_ntoa({lsack_packet->header.router_id});
-        }
-        std::cout<<std::endl;
     }
     for (int i = 0; i < lsack_packet->get_lsa_num(); i++) {
         lsack_packet->lsa_headers[i].ntoh();
         LSAHeader *r_lsa = router::lsa_db.get_lsa(&lsack_packet->lsa_headers[i]);
         if (r_lsa != NULL) {
-            std::cout<<"remove lsa because lsack, where neighbor is"<<std::hex<<(long)neighbor<<std::endl;
             neighbor->lsu_retransmit_manager.remove_lsa(&lsack_packet->lsa_headers[i]);
         }
     }

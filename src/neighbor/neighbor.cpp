@@ -30,13 +30,11 @@ Neighbor::Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip) {
     this->b_MS      = 1;
     this->dd_last_recv = (OSPFDD*)calloc(1, 4096);
     this->dd_last_send = (OSPFDD*)calloc(1, 4096);
-    std::cout<<"a new neighbor is created by hello packet"<<(long)this<<std::endl;
 }
 
 Neighbor::Neighbor() {
     this->dd_last_recv = (OSPFDD*)calloc(1, 4);
     this->dd_last_send = (OSPFDD*)calloc(1, 4);
-    std::cout<<"a new neighbor is created temp"<<std::hex<<(long)this<<std::endl;
 }
 
 Neighbor::~Neighbor() {
@@ -45,7 +43,6 @@ Neighbor::~Neighbor() {
     for (LSAHeader* lsa : req_v_lsas) {
         delete lsa;
     }
-    std::cout<<"a neighbor is deleted"<<(long)this<<std::endl;
 }
 
 bool Neighbor::rm_from_reqs(LSAHeader *v_lsa) {

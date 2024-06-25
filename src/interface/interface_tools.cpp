@@ -4,9 +4,7 @@
 #include "../../include/global_settings/router.h"
 
 Neighbor* Interface::get_neighbor_by_id(uint32_t router_id) {
-    std::cout<<"get neighbor by id"<<inet_ntoa({router_id})<<std::endl;
     for (auto n : neighbors) {
-        std::cout<<" "<<inet_ntoa({n->router_id})<<std::endl;
         if (n->router_id == router_id) {
             return n;
         }
