@@ -49,13 +49,13 @@ void Interface::recv_thread_runner() {
         if (ipv4_header->version != 4 
         || ipv4_header->protocol != 89 
         || (ipv4_header->daddr != this->ip && ipv4_header->daddr != inet_addr("224.0.0.5") && ipv4_header->daddr != inet_addr("224.0.0.6"))) {
-            uint32_t daddr = ipv4_header->daddr;
-            Interface *target_interface = router::routing_table.query(daddr);
-            if (target_interface == NULL) {
-                logger::other_log(this, "Unknown address: " + std::string(inet_ntoa({daddr})));
-            } else if (target_interface != this && ipv4_header->ttl != 1) {
-                target_interface->transmit_packet(recv_buffer + sizeof(struct ethhdr), ntohs(ipv4_header->tot_len));
-            }
+            //uint32_t daddr = ipv4_header->daddr;
+            //Interface *target_interface = router::routing_table.query(daddr);
+            //if (target_interface == NULL) {
+            //    logger::other_log(this, "Unknown address: " + std::string(inet_ntoa({daddr})));
+            //} else if (target_interface != this && ipv4_header->ttl != 1) {
+            //    target_interface->transmit_packet(recv_buffer + sizeof(struct ethhdr), ntohs(ipv4_header->tot_len));
+            //}
             continue;
         }
         
@@ -144,6 +144,9 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
     //std::cout<<"receive a dd"<<std::endl;
     //dd_packet->show();
     Neighbor *neighbor = interface->get_neighbor_by_id(dd_packet->header.router_id);
+    if (neighbor == NULL) {
+        return;
+    }
     OSPFDD *last_dd = neighbor->dd_last_recv;
     uint32_t packet_dd_seq_num = ntohl(dd_packet->dd_sequence_number);
     switch (neighbor->state) {
@@ -174,12 +177,15 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             //确定主从
             neighbor->event_negotiation_done();
             if (ntohl(dd_packet->header.router_id) > ntohl(router::router_id)) {
+                //自己是从机
                 neighbor->b_MS = 0;
                 neighbor->dd_sequence_number = ntohl(dd_packet->dd_sequence_number);
                 neighbor->b_I = 0;
                 neighbor->dd_retransmit_timer = -1;
                 interface->send_dd_packet(neighbor);
+                neighbor->dd_sequence_number++;
             } else {
+                //自己是主机
                 neighbor->b_MS = 1;
                 neighbor->b_I = 0;
             }
@@ -204,8 +210,13 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             }
             memcpy(last_dd, dd_packet, 2048);
             //检查dd序号
-            if (neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num + 1 
-                || !neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num) {
+            // if (neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num + 1 
+            //     || !neighbor->b_MS && neighbor->dd_sequence_number != packet_dd_seq_num) {
+            //     logger::event_log(interface, "received unmatched sequence number in DD packet");
+            //     neighbor->event_seq_num_mismatch();
+            //     return;
+            // }
+            if (neighbor->dd_sequence_number != packet_dd_seq_num ) {
                 logger::event_log(interface, "received unmatched sequence number in DD packet");
                 neighbor->event_seq_num_mismatch();
                 return;
@@ -220,17 +231,19 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                 }
             }
             // 判断是否还需要发送
-            if (neighbor->b_MS) {
+            if (neighbor->b_MS) { //如果是主机
                 if (neighbor->dd_has_more_lsa() || dd_packet->b_M) {
+                    neighbor->dd_sequence_number++;
                     interface->send_dd_packet(neighbor);
                 } else {
                     neighbor->event_exchange_done();
                 }
-            } else {
+            } else { //如果是从机
                 if (!neighbor->dd_has_more_lsa() && !dd_packet->b_M) {
                     neighbor->event_exchange_done();
                 }
                 interface->send_dd_packet(neighbor);
+                neighbor->dd_sequence_number++;
             }
             break;
         case LOADING:
@@ -254,16 +267,22 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
 void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface) {
     std::vector<LSAHeader*> req_r_lsas;
     Neighbor *neighbor = interface->get_neighbor_by_id(lsr_packet->header.router_id);
+    if (neighbor == NULL) {
+        return;
+    }
     if (neighbor->state != EXCHANGE
             && neighbor->state != LOADING
             && neighbor->state != FULL) {
         return;
     }
-
+    std::cout<<"LSR received\n";
+    router::lsa_db.show();
+    std::cout<<"db_end\n";
     for (int i = 0; i < lsr_packet->get_req_num(); i++) {
         LSAHeader *lsa = router::lsa_db.get_lsa(ntohl(lsr_packet->reqs[i].ls_type), 
                                                 lsr_packet->reqs[i].link_state_id, 
                                                 lsr_packet->reqs[i].advertising_router);
+        std::cout<<ntohl(lsr_packet->reqs[i].ls_type)<<inet_ntoa({lsr_packet->reqs[i].link_state_id})<<inet_ntoa({lsr_packet->reqs[i].link_state_id})<<std::endl;
         if (lsa == NULL) {
             neighbor->event_bad_lsreq();
             return;
@@ -322,7 +341,7 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
             }
             //如果存在相同实例
             if (r_lsa->compare(v_lsa) == 0) {
-                neighbor->lsu_retransmit_manager.remove_lsa(v_lsa);//隐含确认
+                neighbor->lsu_retransmit_manager.remove_lsa(r_lsa);//隐含确认
                 interface->send_lsack_packet(v_lsa, daddr);
             } else {
                 //该数据库副本没有在最近MinLSArrival内被LSU发送，将其立刻发送给邻居
@@ -334,8 +353,21 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
 
 void handle_recv_lsack(OSPFLSAck *lsack_packet, Interface *interface) {
     Neighbor *neighbor = interface->get_neighbor_by_id(lsack_packet->header.router_id);
+    lsack_packet->header.show();
+    if (neighbor == NULL) {
+        return;
+        std::cout<<"null neighbor!"<<inet_ntoa({lsack_packet->header.router_id});
+        for (auto neighbor : interface->neighbors) {
+            std::cout<<"  "<<inet_ntoa({lsack_packet->header.router_id});
+        }
+        std::cout<<std::endl;
+    }
     for (int i = 0; i < lsack_packet->get_lsa_num(); i++) {
         lsack_packet->lsa_headers[i].ntoh();
-        neighbor->lsu_retransmit_manager.remove_lsa(&lsack_packet->lsa_headers[i]);
+        LSAHeader *r_lsa = router::lsa_db.get_lsa(&lsack_packet->lsa_headers[i]);
+        if (r_lsa != NULL) {
+            std::cout<<"remove lsa because lsack, where neighbor is"<<std::hex<<(long)neighbor<<std::endl;
+            neighbor->lsu_retransmit_manager.remove_lsa(&lsack_packet->lsa_headers[i]);
+        }
     }
 }

@@ -17,21 +17,26 @@
 
 Neighbor::Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip) {
     this->router_id = hello_packet->header.router_id;
-    this->priority  = hello_packet->rtr_priority;
-    this->ip        = ip;
     this->dr        = hello_packet->designated_router;
     this->bdr       = hello_packet->backup_designated_router;
+    this->priority  = hello_packet->rtr_priority;
+    this->ip        = ip;
+    this->inactivity_timer = -1;
+    this->dd_retransmit_timer = -1;
+    this->lsr_retransmit_timer = -1;
     this->interface = interface;
     this->b_I       = 1;
     this->b_M       = 1;
     this->b_MS      = 1;
     this->dd_last_recv = (OSPFDD*)calloc(1, 4096);
     this->dd_last_send = (OSPFDD*)calloc(1, 4096);
+    std::cout<<"a new neighbor is created by hello packet"<<(long)this<<std::endl;
 }
 
 Neighbor::Neighbor() {
     this->dd_last_recv = (OSPFDD*)calloc(1, 4);
     this->dd_last_send = (OSPFDD*)calloc(1, 4);
+    std::cout<<"a new neighbor is created temp"<<std::hex<<(long)this<<std::endl;
 }
 
 Neighbor::~Neighbor() {
@@ -40,6 +45,7 @@ Neighbor::~Neighbor() {
     for (LSAHeader* lsa : req_v_lsas) {
         delete lsa;
     }
+    std::cout<<"a neighbor is deleted"<<(long)this<<std::endl;
 }
 
 bool Neighbor::rm_from_reqs(LSAHeader *v_lsa) {
@@ -257,12 +263,14 @@ bool Neighbor::dd_has_more_lsa() {
 }
 
 void Neighbor::LSURetransmitManager::step_one() {
+    printf("######thread %d visit step one\n", std::this_thread::get_id());
     for (auto it = timer.begin(); it != timer.end(); ++it) {
         it->second--;
     }
 }
 
 void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>& r_lsas) {
+    printf("######thread %d visit get retransmit lsas\n", std::this_thread::get_id());
     for (auto& pair : timer) {
         if (pair.second <= 0) {
             r_lsas.push_back(pair.first);
@@ -271,11 +279,12 @@ void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>
     }
 }
 
-void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* lsa) {
+void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* r_lsa) {
+    printf("######thread %d visit %x's remove lsa and try to remove %x\n", std::this_thread::get_id(), this, r_lsa);
     for (auto it = timer.begin(); it != timer.end();) {
         //清除与lsa相同或者比lsa更老的实例
-        printf("%d %d\n", it->first, lsa);
-        if (it->first->compare(lsa) >= 0) {
+        printf("%d %d\n", it->first, r_lsa);
+        if (it->first->compare(r_lsa) >= 0) {
             timer.erase(it++->first);
             return;
         } else {
@@ -285,5 +294,6 @@ void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* lsa) {
 }
 
 void Neighbor::LSURetransmitManager::add_lsa(LSAHeader* r_lsa) {
+    printf("######thread %d visit add lsa\n", std::this_thread::get_id());
     timer[r_lsa] = 5;
 }

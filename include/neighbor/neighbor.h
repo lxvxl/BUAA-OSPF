@@ -32,7 +32,6 @@ struct Neighbor {
     uint32_t        bdr;
     uint8_t         priority;
     uint32_t        ip;
-    bool            is_master;
     uint32_t        inactivity_timer        = -1;
     uint32_t        dd_retransmit_timer     = -1;
     uint32_t        lsr_retransmit_timer    = -1;

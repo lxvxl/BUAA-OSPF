@@ -114,16 +114,17 @@ void OSPFDD::fill(Neighbor *neighbor) {
     this->b_I                = neighbor->b_I;
     this->b_other            = 0;
     this->dd_sequence_number = htonl(neighbor->dd_sequence_number); // DD序列号
-    neighbor->dd_sequence_number++;
+    //neighbor->dd_sequence_number++;
 
     Interface *interface = neighbor->interface;
     int header_num;
-    if (this->b_I) {
+    if (neighbor->b_I) {
         header_num = 0; 
+        this->b_M  = 1;
     } else {
         header_num = neighbor->fill_lsa_headers(this->lsa_headers);
+        this->b_M  = neighbor->dd_has_more_lsa();
     } 
-    this->b_M                = neighbor->dd_has_more_lsa();
     
     ((OSPFHeader*)this)->fill(OSPFPacketType::DD, interface->area_id, sizeof(OSPFDD) + header_num * sizeof(LSAHeader));
 }

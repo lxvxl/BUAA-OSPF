@@ -86,6 +86,7 @@ void Interface::send_hello_packet() {
 }
 
 void Interface::send_dd_packet(Neighbor *neighbor) {
+    //std::cout<<"send a dd\n";
     struct sockaddr_in dst_sockaddr;
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
     dst_sockaddr.sin_family = AF_INET;
@@ -99,12 +100,13 @@ void Interface::send_dd_packet(Neighbor *neighbor) {
         perror("[Thread]SendHelloPacket: sendto");
     } 
     memcpy(neighbor->dd_last_send, this->send_buffer, 2048);
-    if (neighbor->is_master) {
+    if (neighbor->b_MS) {
         neighbor->dd_retransmit_timer = 10;
     }
 }
 
 void Interface::send_last_dd_packet(Neighbor *neighbor) {
+    //std::cout<<"resend a dd\n";
     struct sockaddr_in dst_sockaddr;
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
     dst_sockaddr.sin_family = AF_INET;
@@ -116,7 +118,7 @@ void Interface::send_last_dd_packet(Neighbor *neighbor) {
                (struct sockaddr*)&dst_sockaddr, sizeof(dst_sockaddr)) < 0) {
         perror("[Thread]SendHelloPacket: sendto");
     } 
-    if (neighbor->is_master) {
+    if (neighbor->b_MS) {
         neighbor->dd_retransmit_timer = 10;
     }
 }
