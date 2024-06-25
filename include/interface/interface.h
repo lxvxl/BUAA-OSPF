@@ -49,6 +49,7 @@ struct Interface {
 
     int         send_socket_fd;
     int         recv_socket_fd;
+    int         transmit_socket_fd          = 0;
 
     std::vector<Neighbor *> neighbors;
     std::mutex mtx;
@@ -78,6 +79,8 @@ struct Interface {
     void        send_lsu_packet(LSAHeader *r_lsa, uint32_t dst_addr);
     void        send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_addr);
     void        send_lsack_packet(LSAHeader *v_lsa, uint32_t dst_addr);
+
+    void        transmit_packet(char buffer[], int length);
 
     void        elect_dr();
     void        recv_thread_runner();

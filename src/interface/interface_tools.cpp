@@ -47,3 +47,33 @@ void Interface::clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) {
         neighbor->lsu_retransmit_manager.remove_lsa(old_r_lsa);
     }
 }
+
+void Interface::transmit_packet(char packet[], int length) {
+    if (this->transmit_socket_fd == 0) {
+        if ((this->transmit_socket_fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+            perror("socket creation failed");
+            return;
+        }
+        // 绑定到指定的网络接口
+        struct ifreq ifr;
+        memset(&ifr, 0, sizeof(ifr));
+        strncpy(ifr.ifr_name, this->name, IFNAMSIZ - 1);
+
+        if (setsockopt(this->recv_socket_fd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) < 0) {
+            perror("Binding to network interface failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+    struct sockaddr_in dest_addr;
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(0); // 端口号在IP头中
+    dest_addr.sin_addr.s_addr = this->ip;
+
+    // 发送数据包
+    if (sendto(this->transmit_socket_fd, packet, length, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) < 0) {
+        perror("sendto failed");
+        close(this->transmit_socket_fd);
+        this->transmit_socket_fd = 0;
+        return;
+    }
+}

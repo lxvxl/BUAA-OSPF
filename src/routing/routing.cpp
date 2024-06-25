@@ -138,3 +138,22 @@ void RoutingTable::reset() {
     net_node_map.clear();
     next_step.clear();
 }
+
+Interface* RoutingTable::query(uint32_t daddr) {
+    for (auto pair : next_step) {
+        if (pair.first->is_router) {
+            continue;
+        }
+        NetNode *target = (NetNode*)pair.first;
+        if ((target->id & target->mask) == (daddr & target->mask)) {
+            uint32_t next_addr = pair.second->id;
+            for (Interface *interface : router::interfaces) {
+                if ((interface->ip & interface->network_mask) == (daddr & interface->network_mask)) {
+                    return interface;
+                }
+            }
+            return NULL;
+        }
+    }
+    return NULL;
+}

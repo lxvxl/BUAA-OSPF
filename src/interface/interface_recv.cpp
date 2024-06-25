@@ -48,7 +48,14 @@ void Interface::recv_thread_runner() {
         struct iphdr *ipv4_header = (struct iphdr*)(recv_buffer + sizeof(struct ethhdr));
         if (ipv4_header->version != 4 
         || ipv4_header->protocol != 89 
-        || (ipv4_header->daddr != this->ip && ipv4_header->daddr != inet_addr("224.0.0.5"))) {
+        || (ipv4_header->daddr != this->ip && ipv4_header->daddr != inet_addr("224.0.0.5") && ipv4_header->daddr != inet_addr("224.0.0.6"))) {
+            uint32_t daddr = ipv4_header->daddr;
+            Interface *target_interface = router::routing_table.query(daddr);
+            if (target_interface == NULL) {
+                logger::other_log(this, "Unknown address: " + std::string(inet_ntoa({daddr})));
+            } else if (target_interface != this && ipv4_header->ttl != 1) {
+                target_interface->transmit_packet(recv_buffer + sizeof(struct ethhdr), ntohs(ipv4_header->tot_len));
+            }
             continue;
         }
         
