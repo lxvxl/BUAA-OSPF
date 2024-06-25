@@ -1,6 +1,7 @@
 #include "../../include/packet/packets.h"
 #include "../../include/interface/interface.h"
 #include "../../include/global_settings/common.h"
+#include "../../include/global_settings/router.h"
 
 Neighbor* Interface::get_neighbor_by_id(uint32_t router_id) {
     for (auto n : neighbors) {
@@ -20,11 +21,13 @@ Neighbor *Interface::get_neighbor_by_ip(uint32_t ip) {
     return NULL;
 }
 
-Interface::Interface(const char *name)
-{
-    this->name = name;
+Interface::Interface(const char *name, uint32_t ip, uint32_t mask) {
+    this->name         = name;
+    this->ip           = ip;
+    this->network_mask = mask;
     memset(send_buffer, 0, sizeof(send_buffer));
     memset(recv_buffer, 0, sizeof(recv_buffer));
+    router::interfaces.push_back(this);
 }
 
 void Interface::clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) {

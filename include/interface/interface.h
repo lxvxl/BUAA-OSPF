@@ -57,7 +57,7 @@ struct Interface {
     char send_buffer[BUFFER_SIZE];
     char recv_buffer[BUFFER_SIZE];
 
-    Interface(const char *name);
+    Interface(const char *name, uint32_t ip, uint32_t mask);
 
     void        event_interface_up();
     void        event_wait_timer();
