@@ -42,11 +42,11 @@ int LSAHeader::compare(LSAHeader *another) {
         return 1;
     }
 
-    if (ls_age > another->ls_age) {
-        return 1;
-    } else if (ls_age < another->ls_age) {
-        return -1;
-    }
+    //if (ls_age > another->ls_age) {
+    //    return 1;
+    //} else if (ls_age < another->ls_age) {
+    //    return -1;
+    //}
     return 0;
 }
 

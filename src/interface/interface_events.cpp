@@ -81,6 +81,9 @@ end:
 }
 
 void Interface::event_neighbor_change() {
+    if (this->state < DROTHER) {
+        return;
+    }
     logger::event_log(this, "neighbor change");
     event_pre_aspect
 
@@ -128,6 +131,7 @@ bool is_bdr_or_dr(uint32_t ip, uint32_t dr, uint32_t bdr) {
 
 void Interface::elect_dr() {
     // Step 1: Create a list of neighbors in FULL state with non-zero priority
+    logger::other_log(this, "elect DR and BDR");
     std::vector<Neighbor*> candidates;
     for (auto neighbor : neighbors) {
         if (neighbor->state >= NeighborState::_2WAY && neighbor->priority > 0) {
