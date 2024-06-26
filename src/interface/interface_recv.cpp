@@ -48,7 +48,7 @@ void Interface::recv_thread_runner() {
         struct iphdr *ipv4_header = (struct iphdr*)(recv_buffer + sizeof(struct ethhdr));
         if (ipv4_header->version != 4 
         || ipv4_header->protocol != 89 
-        || (ipv4_header->daddr != this->ip && ipv4_header->daddr != inet_addr("224.0.0.5") && ipv4_header->daddr != inet_addr("224.0.0.6"))) {
+        || (ipv4_header->daddr != this->ip && ipv4_header->daddr != inet_addr("224.0.0.5") && (ipv4_header->daddr != inet_addr("224.0.0.6")))) {
             //if (ipv4_header->version == 4 && ipv4_header->protocol == 1) {
             //    uint32_t daddr = ipv4_header->daddr;
             //    Interface *target_interface = router::routing_table.query(daddr);
@@ -61,6 +61,13 @@ void Interface::recv_thread_runner() {
             //}
             continue;
         }
+        if ((ipv4_header->daddr == inet_addr("224.0.0.6")) && (this->state != DR && this->state != BACKUP)) {
+            continue;
+        }
+        if ((ipv4_header->saddr & this->network_mask) != (this->ip & this->network_mask)) {
+            continue;//h不知道s为什么会受到其他网卡的东西
+        }
+        logger::other_log(this, "received a packet");
         
         struct OSPFHeader *ospf_header = (struct OSPFHeader*)(recv_buffer + sizeof(struct ethhdr) + sizeof(struct iphdr)); 
         uint32_t saddr = ipv4_header->saddr;
@@ -173,7 +180,8 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             } 
             memcpy(last_dd, dd_packet, 2048);
             if (dd_packet->get_lsa_num() != 0 || !dd_packet->b_I || !dd_packet->b_M || !dd_packet->b_MS) {
-                logger::other_log(interface, "dd refused: wrong format during EXSTART state");
+                logger::other_log(interface, "dd refused: wrong format during EXSTART state, lsa_num: " + std::to_string((int)dd_packet->get_lsa_num())
+                                                + " b_I: " + std::to_string(dd_packet->b_MS));
                 return;
             }
             //确定主从
@@ -251,6 +259,10 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
         case LOADING:
         case FULL:
             // 这时候只可能收到重复的包。如果不重复，生成seq mismatch事件。否则，从机重发报文。
+            if (dd_packet->b_I) {
+                neighbor->event_seq_num_mismatch();
+                break;
+            }
             if (dd_packet->b_I == last_dd->b_I
                     && dd_packet->b_M == last_dd->b_M
                     && dd_packet->b_MS == last_dd->b_MS
@@ -282,6 +294,7 @@ void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface) {
                                                 lsr_packet->reqs[i].link_state_id, 
                                                 lsr_packet->reqs[i].advertising_router);
         if (lsa == NULL) {
+            std::cout<<"querying a null lsa\n";
             neighbor->event_bad_lsreq();
             return;
         }
@@ -334,7 +347,15 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
             interface->send_lsack_packet(v_lsa, daddr);
         } else { //数据库中存在更新的实例或者相同的实例
             if (neighbor->rm_from_reqs(v_lsa)) { //如果这个实例正在请求列表中，生成BadLSReq事件
-                neighbor->event_bad_lsreq();
+                std::cout<<"querying lsa:\n";
+                v_lsa->show();
+                std::cout<<"but we have lsa:\n";
+                r_lsa->show();
+                if (v_lsa->compare(r_lsa) == 0) {
+                    interface->send_lsack_packet(v_lsa, daddr);
+                } else {
+                    neighbor->event_bad_lsreq();
+                }
                 return;
             }
             //如果存在相同实例

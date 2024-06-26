@@ -1,7 +1,7 @@
 #include "../../include/packet/packets.h"
 #include "../../include/global_settings/common.h"
 #include "../../include/global_settings/router.h"
-
+#include "../../include/logger/logger.h"
 //LSAHeader::Relation LSAHeader::compare(LSAHeader *another) {
 //    //这里有问题！！没有完全实现
 //    if (ls_type != another->ls_type 
@@ -122,7 +122,7 @@ void LSAHeader::show() {
     std::cout<<"ls_age:\t"<<this->ls_age<<std::endl;
     std::cout<<"ls_type:\t"<<this->ls_type<<std::endl;
     std::cout<<"ad_router:\t"<<inet_ntoa({this->advertising_router})<<std::endl;
-    std::cout<<"seq_num:\t"<<this->ls_seq_num<<std::endl;
+    std::cout<<"seq_num:\t"<<std::hex<<this->ls_seq_num<<std::endl;
     std::cout<<"length:\t"<<this->length<<std::endl;
     std::cout<<"link_state_id:\t"<<inet_ntoa({link_state_id})<<std::endl;
 }
@@ -256,6 +256,7 @@ void NetworkLSA::ntoh() {
 }
 
 NetworkLSA* NetworkLSA::generate(Interface *interface) {
+    logger::other_log(interface, "try to generate a Network LSA");
     std::vector<uint32_t> attached_routers;
     attached_routers.push_back(router::router_id);
     for (Neighbor *neighbor : interface->neighbors) {
