@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <queue>
 #include <bitset>
+#include <string>
 
 RouterNode* RoutingTable::get_router_node(uint32_t id) {
     if (router_node_map.find(id) == router_node_map.end()) {
@@ -156,4 +157,34 @@ Interface* RoutingTable::query(uint32_t daddr) {
         }
     }
     return NULL;
+}
+
+void addRoute(const std::string& targetNetwork, const std::string& netmask, const std::string& nextHopInterface) {
+    std::string command = "sudo route add -net " + targetNetwork + " netmask " + netmask + " dev " + nextHopInterface;
+    int result = system(command.c_str());
+    
+    if (result != 0) {
+        std::cerr << "Failed to add route. Command: " << command << std::endl;
+    } else {
+        std::cout << "Route added successfully. Command: " << command << std::endl;
+    }
+}
+
+void RoutingTable::write_routing() {
+    for (auto pair : next_step) {
+        NetNode *target = (NetNode*)pair.first;
+        Interface* target_interface = NULL;
+        for (Interface *interface : router::interfaces) {
+            if ((interface->ip & interface->network_mask) == (target->id & target->mask)) {
+                target_interface = interface;
+                break;
+            }
+        }
+        if (target_interface != NULL) {
+            std::string target_network = inet_ntoa({target->id});
+            std::string target_mask = inet_ntoa({target->mask});
+            std::string target_interface_name = target_interface->name;
+            addRoute(target_network, target_mask, target_interface_name);
+        }
+    }
 }

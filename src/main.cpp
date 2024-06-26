@@ -12,8 +12,7 @@ int main() {
     interface1.event_interface_up();
     Interface interface2("enp0s9", inet_addr("192.168.65.20"), inet_addr("255.255.255.0"));
     interface2.event_interface_up();
-    while (true)
-    {   
+    while (true) {   
         std::string inst;
         std::getline(std::cin, inst);
         if (inst == "dis db") {
@@ -30,6 +29,10 @@ int main() {
             logger::enable_terminal_logging(false);
         } else if (inst == "enable log") {
             logger::enable_terminal_logging(true);
+        } else if (inst == "write routing table") { 
+            std::unique_lock<std::mutex> lock(router::mutex);
+            router::routing_table.write_routing();
+            lock.unlock();  
         } else {
             std::cout<<"illegal instruction!"<<std::endl;
         }
