@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <set>
 #include <unordered_map>
+#include <set>
 
 
 class Node {
@@ -43,10 +44,14 @@ class RoutingTable {
         std::unordered_map<uint32_t, NetNode*> net_node_map;
         RouterNode *me;
         std::unordered_map<Node*, Node*> next_step;
+
         RouterNode* get_router_node(uint32_t id);
         NetNode* get_net_node(uint32_t ip, uint32_t mask);
+        
+        std::set<std::string*> written_routes;
         void dijkstra();
         void reset();
+        void add_route(const std::string& target_net, const std::string& target_mask, const std::string& next_net);
     public:
         void generate(std::vector<RouterLSA*>& router_lsas, std::vector<NetworkLSA*>& network_lsas);
         void show();

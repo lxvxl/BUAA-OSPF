@@ -159,32 +159,33 @@ Interface* RoutingTable::query(uint32_t daddr) {
     return NULL;
 }
 
-void addRoute(const std::string& targetNetwork, const std::string& netmask, const std::string& nextHopInterface) {
-    std::string command = "sudo route add -net " + targetNetwork + " netmask " + netmask + " dev " + nextHopInterface;
-    int result = system(command.c_str());
+void RoutingTable::add_route(const std::string& target_net, const std::string& target_mask, const std::string& next_net) {
+    std::string* command = new std::string("sudo route add -net " + target_net + " netmask " + target_mask + " gw " + next_net);
+    int result = system(command->c_str());
     
     if (result != 0) {
         std::cerr << "Failed to add route. Command: " << command << std::endl;
     } else {
         std::cout << "Route added successfully. Command: " << command << std::endl;
+        written_routes.insert(command);
     }
 }
 
 void RoutingTable::write_routing() {
+    for (std::string* route_item : written_routes) {
+        route_item->replace(route_item->find("add"), 3, "del");
+        system(route_item->c_str());
+    }
+    written_routes.clear();
     for (auto pair : next_step) {
+        if (pair.first->is_router) {
+            continue;
+        }
         NetNode *target = (NetNode*)pair.first;
-        Interface* target_interface = NULL;
-        for (Interface *interface : router::interfaces) {
-            if ((interface->ip & interface->network_mask) == (target->id & target->mask)) {
-                target_interface = interface;
-                break;
-            }
-        }
-        if (target_interface != NULL) {
-            std::string target_network = inet_ntoa({target->id});
-            std::string target_mask = inet_ntoa({target->mask});
-            std::string target_interface_name = target_interface->name;
-            addRoute(target_network, target_mask, target_interface_name);
-        }
+        NetNode *next = (NetNode*)pair.second;
+        std::string target_network = inet_ntoa({target->id});
+        std::string target_mask = inet_ntoa({target->mask});
+        std::string next_step = inet_ntoa({next->id});
+        add_route(target_network, target_mask, next_step);
     }
 }
