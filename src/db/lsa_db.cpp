@@ -16,7 +16,7 @@ void LSADatabase::get_all_lsa(std::vector<LSAHeader*>& r_lsas) {
 
 
 LSADatabase::LSADatabase() {
-    this->router_lsas.push_back(RouterLSA::generate());
+    this->router_lsas.push_back(RouterLSA::generate(*this));
     this->update_thread = std::thread(std::bind(&LSADatabase::db_thread_runner, this));
     this->update_thread.detach();
 }
@@ -178,7 +178,7 @@ void LSADatabase::flood(LSAHeader *r_lsa, Interface* origin, InterfaceState send
 }
 
 void LSADatabase::generate_router_lsa() {
-    RouterLSA *router_lsa = RouterLSA::generate();
+    RouterLSA *router_lsa = RouterLSA::generate(*this);
     LSAHeader *pre_lsa = get_lsa((LSAHeader*)router_lsa);
     if (pre_lsa != NULL) {
         clear_invalid_lsa(pre_lsa, (LSAHeader*)router_lsa);

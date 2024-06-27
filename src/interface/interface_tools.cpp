@@ -22,13 +22,15 @@ Neighbor *Interface::get_neighbor_by_ip(uint32_t ip) {
     return NULL;
 }
 
-Interface::Interface(const char *name, uint32_t ip, uint32_t mask) {
+Interface::Interface(const char *name, uint32_t ip, uint32_t mask, uint32_t area_id) {
     this->name         = name;
     this->ip           = ip;
     this->network_mask = mask;
+    this->area_id      = area_id;
     memset(send_buffer, 0, sizeof(send_buffer));
     memset(recv_buffer, 0, sizeof(recv_buffer));
     router::interfaces.push_back(this);
+    router::register_area(area_id);
 }
 
 void Interface::clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) {

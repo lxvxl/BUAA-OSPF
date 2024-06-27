@@ -234,7 +234,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             //添加没有的LSA
             for (int i = 0; i < dd_packet->get_lsa_num(); i++) {
                 dd_packet->lsa_headers[i].ntoh();
-                if (router::lsa_db.get_lsa(&dd_packet->lsa_headers[i]) == NULL) {
+                if (router::area_lsa_dbs[interface->area_id].get_lsa(&dd_packet->lsa_headers[i]) == NULL) {
                     LSAHeader *req_header = new LSAHeader;
                     *req_header = dd_packet->lsa_headers[i];
                     neighbor->req_v_lsas.push_back(req_header);
@@ -290,7 +290,7 @@ void handle_recv_lsr(OSPFLSR *lsr_packet, Interface *interface) {
         return;
     }
     for (int i = 0; i < lsr_packet->get_req_num(); i++) {
-        LSAHeader *lsa = router::lsa_db.get_lsa(ntohl(lsr_packet->reqs[i].ls_type), 
+        LSAHeader *lsa = router::area_lsa_dbs[interface->area_id].get_lsa(ntohl(lsr_packet->reqs[i].ls_type), 
                                                 lsr_packet->reqs[i].link_state_id, 
                                                 lsr_packet->reqs[i].advertising_router);
         if (lsa == NULL) {
@@ -325,7 +325,7 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
         }
     }
     for (LSAHeader* v_lsa : received_v_lsas) {
-        LSADatabase& lsa_db = router::lsa_db;
+        LSADatabase& lsa_db = router::area_lsa_dbs[interface->area_id];
         LSAHeader *r_lsa = lsa_db.get_lsa(v_lsa);
         //如果该实例比数据库中新或者数据库中不存在实例
         if (r_lsa == NULL || v_lsa->compare(r_lsa) < 0) {
@@ -379,7 +379,7 @@ void handle_recv_lsack(OSPFLSAck *lsack_packet, Interface *interface) {
     }
     for (int i = 0; i < lsack_packet->get_lsa_num(); i++) {
         lsack_packet->lsa_headers[i].ntoh();
-        LSAHeader *r_lsa = router::lsa_db.get_lsa(&lsack_packet->lsa_headers[i]);
+        LSAHeader *r_lsa = router::area_lsa_dbs[interface->area_id].get_lsa(&lsack_packet->lsa_headers[i]);
         if (r_lsa != NULL) {
             neighbor->lsu_retransmit_manager.remove_lsa(&lsack_packet->lsa_headers[i]);
         }

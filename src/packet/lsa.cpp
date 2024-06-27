@@ -150,7 +150,7 @@ RouterLSALink::RouterLSALink(uint32_t link_id, uint32_t link_data, uint8_t type,
     this->metric = metric;
 }
 
-RouterLSA *RouterLSA::generate() {
+RouterLSA *RouterLSA::generate(LSADatabase &db) {
     std::vector<RouterLSALink> links;
     for (auto interface : router::interfaces) {
         if (interface->state == DOWN) {
@@ -206,7 +206,7 @@ RouterLSA *RouterLSA::generate() {
     for (uint32_t i = 0; i < links.size(); i++) {
         router_lsa->links[i] = links[i];
     }
-    ((LSAHeader*)router_lsa)->fill(ROUTER, router::router_id, router::lsa_db.get_seq_num(), length);
+    ((LSAHeader*)router_lsa)->fill(ROUTER, router::router_id, db.get_seq_num(), length);
     return router_lsa;
 }
 
@@ -269,7 +269,7 @@ NetworkLSA* NetworkLSA::generate(Interface *interface) {
     for (uint32_t i = 0; i < attached_routers.size(); i++) {
         network_lsa->attached_routers[i] = attached_routers[i];
     }
-    ((LSAHeader*)network_lsa)->fill(NETWORK, interface->ip, router::lsa_db.get_seq_num(), length);
+    ((LSAHeader*)network_lsa)->fill(NETWORK, interface->ip, router::area_lsa_dbs[interface->area_id].get_seq_num(), length);
     return network_lsa;
 }
 

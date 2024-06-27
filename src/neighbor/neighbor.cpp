@@ -8,9 +8,9 @@
 #define event_post_aspect if (pre_state != this->state) {\
     logger::state_transition_log(this, pre_state, this->state);\
         if (this->state == FULL || pre_state == FULL) {\
-            router::lsa_db.generate_router_lsa();\
+            router::area_lsa_dbs[this->interface->area_id].generate_router_lsa();\
             if (this->interface->state == DR) {\
-                router::lsa_db.generate_network_lsa(this->interface);\
+                router::area_lsa_dbs[this->interface->area_id].generate_network_lsa(this->interface);\
             }\
         }\
     }
@@ -67,7 +67,6 @@ void Neighbor::event_hello_received() {
     } else {
         this->inactivity_timer = this->interface->dead_interval;
     }
-
     event_post_aspect
 }
 
@@ -107,8 +106,8 @@ void Neighbor::event_negotiation_done() {
     event_pre_aspect
 
     this->dd_recorder = 0;
-    LSADatabase *db = &router::lsa_db;
-    db->get_all_lsa(this->dd_r_lsa_headers);
+    LSADatabase &db = router::area_lsa_dbs[this->interface->area_id];
+    db.get_all_lsa(this->dd_r_lsa_headers);
     for (auto header : req_v_lsas) {
         delete header;
     }

@@ -31,9 +31,9 @@ struct Interface {
 
     InterfaceState state                    = InterfaceState::DOWN;
     uint8_t     rtr_priority                = 1; 
-    uint32_t    ip                          = inet_addr("192.168.64.20");
-    uint32_t    network_mask                = inet_addr("255.255.255.0");
-    uint32_t    area_id                     = 0;
+    uint32_t    ip                          ;
+    uint32_t    network_mask                ;
+    uint32_t    area_id                     ;
     uint16_t    hello_interval              = 10;
     uint32_t    dead_interval               = 40;
     uint32_t    designated_route            = 0; // 这里用的是网络字节序
@@ -57,7 +57,7 @@ struct Interface {
     char send_buffer[BUFFER_SIZE];
     char recv_buffer[BUFFER_SIZE];
 
-    Interface(const char *name, uint32_t ip, uint32_t mask);
+    Interface(const char *name, uint32_t ip, uint32_t mask, uint32_t area_id);
 
     void        event_interface_up();
     void        event_wait_timer();

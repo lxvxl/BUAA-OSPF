@@ -6,7 +6,7 @@
 #include <functional>
 #define event_pre_aspect InterfaceState pre_state = this->state;
 #define event_post_aspect if (pre_state != state) {\
-    logger::state_transition_log(this, pre_state, this->state);router::lsa_db.generate_router_lsa();}
+    logger::state_transition_log(this, pre_state, this->state);router::area_lsa_dbs[this->area_id].generate_router_lsa();}
 
 /**
  * 启动接口

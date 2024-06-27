@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <netinet/ip.h>
 #include "../interface/interface.h"
+#include "../db/lsa_db.h"
 #include <vector>
 
 enum OSPFPacketType {
@@ -77,7 +78,7 @@ struct RouterLSA {
     void show();
     int  get_link_num();
 
-    static RouterLSA* generate();
+    static RouterLSA* generate(LSADatabase &db);
 };
 
 struct NetworkLSA {

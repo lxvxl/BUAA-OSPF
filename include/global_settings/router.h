@@ -1,6 +1,7 @@
 #ifndef ROUTER_H
 #define ROUTER_H
 #include <vector>
+#include <unordered_map>
 #include "../interface/interface.h"
 #include <stdint.h>
 #include "../db/lsa_db.h"
@@ -9,18 +10,21 @@
 
 struct Interface;
 namespace router {
-    extern std::vector<Interface*>  interfaces; 
-    extern uint32_t                 router_id;
-    extern LSADatabase              lsa_db;
-    extern std::mutex               mutex;
-    extern RoutingTable             routing_table;
+    extern std::vector<Interface*> interfaces; 
+    extern uint32_t router_id;
+    extern std::unordered_map<uint32_t, LSADatabase> area_lsa_dbs; // 区域ID到LSADatabase实例的映射
+    extern std::mutex mutex;
+    extern RoutingTable routing_table;
 
     namespace config {
-        extern const uint8_t  options; 
+        extern const uint8_t options; 
         extern const uint16_t MTU;
-        extern const int      min_ls_arrival;        
+        extern const int min_ls_arrival;        
     }
+
+    // 注册区域函数
+    void register_area(uint32_t area_id);
+    // 获取LSADatabase实例函数
 }
 
-
-#endif
+#endif // ROUTER_H
