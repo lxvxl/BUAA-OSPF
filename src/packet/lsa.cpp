@@ -57,7 +57,6 @@ void LSAHeader::cal_checksum() {
     int32_t x, y;
 	uint32_t mul;
 	uint32_t c0 = 0, c1 = 0;
-	uint16_t checksum = 0;
     const int checksum_offset = 14;
 
 	for (int index = 0; index < length; index++) {
@@ -204,7 +203,7 @@ RouterLSA *RouterLSA::generate() {
     RouterLSA *router_lsa = (RouterLSA*)malloc(length);
     memset(router_lsa, 0, length);
     router_lsa->link_num = links.size();
-    for (int i = 0; i < links.size(); i++) {
+    for (uint32_t i = 0; i < links.size(); i++) {
         router_lsa->links[i] = links[i];
     }
     ((LSAHeader*)router_lsa)->fill(ROUTER, router::router_id, router::lsa_db.get_seq_num(), length);
@@ -212,7 +211,7 @@ RouterLSA *RouterLSA::generate() {
 }
 
 void RouterLSA::hton() {
-    for (int i = 0; i < this->link_num; i++) {
+    for (uint32_t i = 0; i < this->link_num; i++) {
         this->links[i].metric = htons(this->links[i].metric);
     }
     this->link_num= htons(this->link_num);
@@ -267,7 +266,7 @@ NetworkLSA* NetworkLSA::generate(Interface *interface) {
     memset(network_lsa, 0, length);
     network_lsa->network_mask = interface->network_mask;
 
-    for (int i = 0; i < attached_routers.size(); i++) {
+    for (uint32_t i = 0; i < attached_routers.size(); i++) {
         network_lsa->attached_routers[i] = attached_routers[i];
     }
     ((LSAHeader*)network_lsa)->fill(NETWORK, interface->ip, router::lsa_db.get_seq_num(), length);

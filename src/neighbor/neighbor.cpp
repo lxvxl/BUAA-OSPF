@@ -247,7 +247,7 @@ void Neighbor::event_ll_down() {
 int Neighbor::fill_lsa_headers(LSAHeader *headers) {
     int i = 0;
     int max = (router::config::MTU - sizeof(OSPFDD)) / sizeof(LSAHeader);
-    for (;this->dd_recorder < dd_r_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
+    for (;this->dd_recorder < (int)dd_r_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
         headers[i] = *dd_r_lsa_headers[i];
         //headers[i].show();
         headers[i].hton();
@@ -256,7 +256,7 @@ int Neighbor::fill_lsa_headers(LSAHeader *headers) {
 }
 
 bool Neighbor::dd_has_more_lsa() {
-    return dd_recorder < dd_r_lsa_headers.size();
+    return dd_recorder < (int) dd_r_lsa_headers.size();
 }
 
 void Neighbor::LSURetransmitManager::step_one() {

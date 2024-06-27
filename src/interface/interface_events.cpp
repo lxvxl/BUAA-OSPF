@@ -5,9 +5,8 @@
 #include "../../include/global_settings/router.h"
 #include <functional>
 #define event_pre_aspect InterfaceState pre_state = this->state;
-#define event_post_aspect if (pre_state != state) { \
-    logger::state_transition_log(this, pre_state, this->state);\ 
-    router::lsa_db.generate_router_lsa();}
+#define event_post_aspect if (pre_state != state) {\
+    logger::state_transition_log(this, pre_state, this->state);router::lsa_db.generate_router_lsa();}
 
 /**
  * 启动接口
@@ -96,7 +95,6 @@ void Interface::event_neighbor_change() {
         this->state = InterfaceState::DROTHER;
     }
     this->wait_timer = -1;
-end:
     event_post_aspect
 }
 

@@ -15,6 +15,7 @@ RouterNode* RoutingTable::get_router_node(uint32_t id) {
 }
 
 NetNode* RoutingTable::get_net_node(uint32_t ip, uint32_t mask) {
+    ip = ip & mask;
     if (net_node_map.find(ip) == net_node_map.end()) {
         net_node_map[ip] = new NetNode(ip, mask);
     }
@@ -26,10 +27,10 @@ void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<Ne
     reset();
     // Process NetworkLSAs
     for (NetworkLSA* network_lsa : network_lsas) {
-        NetNode *net_node = get_net_node(network_lsa->header.link_state_id, network_lsa->network_mask);
+        get_net_node(network_lsa->header.link_state_id, network_lsa->network_mask);
         for (int i = 0; i < network_lsa->get_routers_num(); ++i) {
             uint32_t attached_router_id = network_lsa->attached_routers[i];
-            RouterNode *router_node = get_router_node(attached_router_id);
+            get_router_node(attached_router_id);
         }
     }
     // Process RouterLSAs
@@ -37,7 +38,7 @@ void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<Ne
         RouterNode *router_node = get_router_node(router_lsa->header.link_state_id);
         for (int i = 0; i < router_lsa->get_link_num(); ++i) {
             RouterLSALink& link = router_lsa->links[i];
-            NetNode* net_node = get_net_node(link.link_id, link.type == TRAN ? 0 : link.link_data);
+            NetNode* net_node = get_net_node(link.link_id, link.type == TRAN ? 0x00ffffff : link.link_data);
             net_node->neighbor_nodes[router_node] = link.metric;
             router_node->neighbor_nodes[net_node] = link.metric;
             router_node->neighbor_2_interface[net_node] = link.type == TRAN ? link.link_data : link.link_id;
@@ -126,6 +127,10 @@ void RoutingTable::show() {
         pair.second->show();
         std::cout<<std::endl;
     }
+    //for (auto pair : net_node_map) {
+    //    pair.second->show();
+    //    std::cout<<std::endl;
+    //}
 }
 
 void RoutingTable::reset() {
@@ -149,7 +154,7 @@ Interface* RoutingTable::query(uint32_t daddr) {
         if ((target->id & target->mask) == (daddr & target->mask)) {
             uint32_t next_addr = pair.second->id;
             for (Interface *interface : router::interfaces) {
-                if ((interface->ip & interface->network_mask) == (daddr & interface->network_mask)) {
+                if ((interface->ip & interface->network_mask) == (next_addr & interface->network_mask)) {
                     return interface;
                 }
             }

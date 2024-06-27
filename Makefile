@@ -5,7 +5,7 @@ TARGET = myOspf
 CXX = g++
 
 # 编译器选项
-CXXFLAGS = -Iinclude -std=c++14 -Wall -Wextra -g
+CXXFLAGS = -Iinclude -std=c++17 -Wall -Wextra -g
 
 LDFLAGS = -pthread
 

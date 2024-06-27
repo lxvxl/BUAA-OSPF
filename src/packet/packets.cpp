@@ -138,7 +138,7 @@ void OSPFDD::fill(Neighbor *neighbor) {
 //}
 void OSPFLSR::fill(std::vector<LSAHeader*>& headers, Interface *interface) {
     size_t req_num = headers.size();
-    for (int i = 0; i < req_num; i++) {
+    for (uint32_t i = 0; i < req_num; i++) {
         this->reqs[i].ls_type            = htonl((uint32_t)headers[i]->ls_type);
         this->reqs[i].link_state_id      = headers[i]->link_state_id;
         this->reqs[i].advertising_router = headers[i]->advertising_router;
@@ -179,7 +179,7 @@ void OSPFLSU::fill(std::vector<LSAHeader*>& r_lsas, Interface *interface) {
 
 void OSPFLSAck::fill(std::vector<LSAHeader*>& v_lsas, Interface *interface) {
     uint32_t lsa_num = v_lsas.size();
-    for (int i = 0; i < lsa_num; i++) {
+    for (uint32_t i = 0; i < lsa_num; i++) {
         this->lsa_headers[i] = *v_lsas[i];
         this->lsa_headers[i].hton();
         //std::cout<<this->lsa_headers[i].ls_checksum<<std::endl;

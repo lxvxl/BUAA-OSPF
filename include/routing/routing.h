@@ -55,7 +55,7 @@ class RoutingTable {
     public:
         void generate(std::vector<RouterLSA*>& router_lsas, std::vector<NetworkLSA*>& network_lsas);
         void show();
-        Interface* query(uint32_t daddr);
+        Interface* query(uint32_t daddr);//暂时弃用
         void write_routing();
 };
 

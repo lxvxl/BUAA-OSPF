@@ -67,7 +67,7 @@ void Interface::recv_thread_runner() {
         if ((ipv4_header->saddr & this->network_mask) != (this->ip & this->network_mask)) {
             continue;//h不知道s为什么会受到其他网卡的东西
         }
-        logger::other_log(this, "received a packet");
+        //logger::other_log(this, "received a packet");
         
         struct OSPFHeader *ospf_header = (struct OSPFHeader*)(recv_buffer + sizeof(struct ethhdr) + sizeof(struct iphdr)); 
         uint32_t saddr = ipv4_header->saddr;
@@ -308,7 +308,7 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
     LSAHeader *next_v_lsa = (LSAHeader*)((uint8_t*)lsu_packet + sizeof(OSPFLSU));
     std::vector<LSAHeader*> received_v_lsas;
     Neighbor *neighbor = interface->get_neighbor_by_ip(saddr);
-    for (int i = 0; i < ntohl(lsu_packet->lsa_num); i++) {
+    for (uint32_t i = 0; i < ntohl(lsu_packet->lsa_num); i++) {
         received_v_lsas.push_back(next_v_lsa);
         //更新数据库，跳转到下一条lsa
         switch (next_v_lsa->ls_type) {
@@ -324,7 +324,6 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
                 break;
         }
     }
-    //如果是发给自己的，说明是在Loading阶段
     for (LSAHeader* v_lsa : received_v_lsas) {
         LSADatabase& lsa_db = router::lsa_db;
         LSAHeader *r_lsa = lsa_db.get_lsa(v_lsa);
@@ -332,11 +331,13 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
         if (r_lsa == NULL || v_lsa->compare(r_lsa) < 0) {
             //如果该实例收到保护
             if (lsa_db.protected_lsas.find(r_lsa) != lsa_db.protected_lsas.end()) {
+                logger::other_log(interface, "trying to override a protected lsa");
                 continue;
             }
             r_lsa = lsa_db.update(v_lsa);
             //查看该实例是否是请求的LSA。如果是，将其删除
             if (daddr == interface->ip && neighbor->rm_from_reqs(v_lsa)) {
+                logger::other_log(interface, "got a quried lsa");
                 continue;
             }
             //否则，泛洪，将其从重传列表中删除
@@ -347,10 +348,10 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
             interface->send_lsack_packet(v_lsa, daddr);
         } else { //数据库中存在更新的实例或者相同的实例
             if (neighbor->rm_from_reqs(v_lsa)) { //如果这个实例正在请求列表中，生成BadLSReq事件
-                std::cout<<"querying lsa:\n";
-                v_lsa->show();
-                std::cout<<"but we have lsa:\n";
-                r_lsa->show();
+                // std::cout<<"querying lsa:\n";
+                // v_lsa->show();
+                // std::cout<<"but we have lsa:\n";
+                // r_lsa->show();
                 if (v_lsa->compare(r_lsa) == 0) {
                     interface->send_lsack_packet(v_lsa, daddr);
                 } else {
@@ -361,7 +362,8 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
             //如果存在相同实例
             if (r_lsa->compare(v_lsa) == 0) {
                 neighbor->lsu_retransmit_manager.remove_lsa(r_lsa);//隐含确认
-                interface->send_lsack_packet(v_lsa, daddr);
+
+                interface->send_lsack_packet(v_lsa, saddr);
             } else {
                 //该数据库副本没有在最近MinLSArrival内被LSU发送，将其立刻发送给邻居
                 interface->send_lsu_packet(r_lsa, saddr);

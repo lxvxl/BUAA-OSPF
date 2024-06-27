@@ -48,7 +48,7 @@ struct Neighbor {
 
     OSPFDD*         dd_last_recv;
     OSPFDD*         dd_last_send;
-    size_t          dd_recorder;            //dd交换期间，下一个将要发送的header位置
+    int             dd_recorder;            //dd交换期间，下一个将要发送的header位置
     std::vector<LSAHeader*> dd_r_lsa_headers; //dd交换期间，将要发送的lsa header列表
 
     std::vector<LSAHeader*> req_v_lsas;       //需要请求的LSA。这个要单独管理内存！

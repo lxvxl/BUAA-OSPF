@@ -5,6 +5,6 @@ LSADatabase router::lsa_db;
 std::mutex router::mutex;
 RoutingTable router::routing_table;
 
-const uint8_t router::config::options = 2;
+const uint8_t router::config::options = 0x42;
 const uint16_t router::config::MTU = 1500;
 const int router::config::min_ls_arrival = 1;
