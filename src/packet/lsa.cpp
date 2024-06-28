@@ -203,6 +203,8 @@ RouterLSA *RouterLSA::generate(LSADatabase &db) {
     RouterLSA *router_lsa = (RouterLSA*)malloc(length);
     memset(router_lsa, 0, length);
     router_lsa->link_num = links.size();
+    router_lsa->b_E = router::is_asbr();
+    router_lsa->b_B = router::is_abr();
     for (uint32_t i = 0; i < links.size(); i++) {
         router_lsa->links[i] = links[i];
     }
@@ -285,4 +287,39 @@ void NetworkLSA::show() {
 
 int NetworkLSA::get_routers_num() {
     return (header.length - sizeof(NetworkLSA)) / sizeof(uint32_t);
+}
+
+void SummaryLSA::hton() {
+    this->header.hton();
+    uint32_t network32 = 0;
+    network32 |= (this->metric & 0x000000FF) << 16;  // 低8位移到高8位
+    network32 |= (this->metric & 0x0000FF00);        // 中间8位保持不变
+    network32 |= (this->metric & 0x00FF0000) >> 16;  // 高8位移到低8位
+    this->metric = network32;
+}
+
+void SummaryLSA::ntoh() {
+    this->header.ntoh();
+    uint32_t host32 = 0;
+    host32 |= (this->metric & 0x000000FF) << 16;  // 低8位移到高8位
+    host32 |= (this->metric & 0x0000FF00);        // 中间8位保持不变
+    host32 |= (this->metric & 0x00FF0000) >> 16;  // 高8位移到低8位
+    this->metric = host32;
+}
+
+void SummaryLSA::generate(uint32_t area_id,std::vector<SummaryLSA*> lsas) {
+    LSADatabase &lsdb = router::area_lsa_dbs[area_id];
+    for (auto pair : lsdb.routing_manager->routing_table.items) {
+        auto routing_item = pair.second;
+        if (!routing_item.inner) {
+            continue;
+        }
+        SummaryLSA *summary_lsa = (SummaryLSA*)malloc(sizeof(SummaryLSA));
+        summary_lsa->tos = 0;
+        summary_lsa->network_mask = routing_item.mask;
+        summary_lsa->padding = 0;
+        summary_lsa->metric = (uint32_t)routing_item.metric;
+        summary_lsa->header.fill(SUMMARY3, routing_item.target_net, lsdb.get_seq_num(), sizeof(SummaryLSA));
+        lsas.push_back(summary_lsa);
+    }
 }

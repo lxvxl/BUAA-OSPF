@@ -27,7 +27,10 @@ int main() {
             lock.unlock();
         } else if (inst == "dis routing") {
             std::unique_lock<std::mutex> lock(router::mutex);
-            router::routing_table.show();
+            for (auto& pair : router::area_lsa_dbs) {
+                std::cout<<"Area "<<inet_ntoa({pair.first})<<std::endl;
+                pair.second.routing_manager->show();
+            }
             lock.unlock();    
         } else if (inst == "quit") {
             break;
@@ -37,7 +40,7 @@ int main() {
             logger::enable_terminal_logging(true);
         } else if (inst == "write routing table") { 
             std::unique_lock<std::mutex> lock(router::mutex);
-            router::routing_table.write_routing();
+            //router::routing_table.write_routing();
             lock.unlock();  
         } else {
             std::cout<<"illegal instruction!"<<std::endl;

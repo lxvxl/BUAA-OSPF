@@ -20,6 +20,7 @@ enum OSPFPacketType {
 enum LSType {
     ROUTER = 1,
     NETWORK,
+    SUMMARY3,
 };
 
 enum LSALinkType {
@@ -93,7 +94,16 @@ struct NetworkLSA {
     static NetworkLSA* generate(Interface *interface);
 };
 
-
+struct SummaryLSA {
+    struct LSAHeader header;
+    uint32_t network_mask;
+    uint32_t padding:8;
+    uint32_t metric:24;
+    uint32_t tos;//暂时不考虑  
+    void hton();
+    void ntoh();
+    static void generate(uint32_t area_id, std::vector<SummaryLSA*> lsas);
+};
 
 struct OSPFHeader {
     uint8_t     version;           // 版本号

@@ -14,7 +14,6 @@ namespace router {
     extern uint32_t router_id;
     extern std::unordered_map<uint32_t, LSADatabase> area_lsa_dbs; // 区域ID到LSADatabase实例的映射
     extern std::mutex mutex;
-    extern RoutingTable routing_table;
 
     namespace config {
         extern const uint8_t options; 
@@ -24,7 +23,8 @@ namespace router {
 
     // 注册区域函数
     void register_area(uint32_t area_id);
-    // 获取LSADatabase实例函数
+    bool is_abr();
+    bool is_asbr();
 }
 
 #endif // ROUTER_H

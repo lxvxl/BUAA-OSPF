@@ -7,6 +7,8 @@
 #include <map>
 #include "../packet/packets.h"
 #include "../interface/interface.h"
+#include "../routing/routing.h"
+#include "../global_settings/common.h"
 
 struct Interface;
 struct RouterLSA;
@@ -14,15 +16,19 @@ struct NetworkLSA;
 struct LSAHeader;
 enum InterfaceState : int;
 
+class RoutingManager;
 struct LSADatabase {
+    uint32_t                    area_id         ;
     std::vector<RouterLSA*>     router_lsas;
     std::vector<NetworkLSA*>    network_lsas;
     uint32_t                    seq_num         = 0x80000001;
     std::map<LSAHeader*, int>   protected_lsas; //保护泛洪来的lsa不会被立刻替代
 
     std::thread                 update_thread;
+    RoutingManager              *routing_manager;
 
-    LSADatabase();
+    LSADatabase(uint32_t area_id);
+    LSADatabase() {perror("非法构造数据库实例对象");};
     //判断这个LSA是否存在
     LSAHeader*              get_lsa(LSAHeader *v_lsa);
     //生成LSA的时候，获取下一个序号。

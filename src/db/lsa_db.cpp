@@ -15,10 +15,12 @@ void LSADatabase::get_all_lsa(std::vector<LSAHeader*>& r_lsas) {
 }
 
 
-LSADatabase::LSADatabase() {
+LSADatabase::LSADatabase(uint32_t area_id) {
     this->router_lsas.push_back(RouterLSA::generate(*this));
     this->update_thread = std::thread(std::bind(&LSADatabase::db_thread_runner, this));
     this->update_thread.detach();
+    this->area_id = area_id;
+    this->routing_manager = new RoutingManager();
 }
 
 void LSADatabase::db_thread_runner() {
@@ -112,7 +114,7 @@ LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
             }
             router_lsas.push_back(new_r_lsa);
             protected_lsas[(LSAHeader*)new_r_lsa] = 1;
-            router::routing_table.generate(router_lsas, network_lsas);
+            routing_manager->generate(*this);
             return (LSAHeader*)new_r_lsa;
         }
         case LSType::NETWORK: { 
@@ -123,7 +125,7 @@ LSAHeader* LSADatabase::update(LSAHeader *v_lsa) {
             }
             network_lsas.push_back(new_r_lsa);
             protected_lsas[(LSAHeader*)new_r_lsa] = 1;
-            router::routing_table.generate(router_lsas, network_lsas);
+            routing_manager->generate(*this);
             return (LSAHeader*)new_r_lsa;
         }
         default:
