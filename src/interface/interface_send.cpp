@@ -41,18 +41,19 @@ void Interface::send_thread_runner() {
             }
 
             //查看dd报文重发
-            neighbor->dd_retransmit_timer--;
-            if (neighbor->dd_retransmit_timer == 0 && (neighbor->state == EXSTART || neighbor->state == EXCHANGE)) {
+            neighbor->dd_manager.timer--;
+            if (neighbor->dd_manager.timer == 0 && (neighbor->state == EXSTART || neighbor->state == EXCHANGE)) {
                 this->send_last_dd_packet(neighbor);
             }
 
             //查看LSR报文重传
             if (neighbor->state == LOADING || neighbor->state == EXCHANGE) {
-                neighbor->lsr_retransmit_timer--;
-                if (neighbor->req_v_lsas.empty()) {
+                neighbor->lsr_manager.timer--;
+                if (neighbor->lsr_manager.req_v_lsas.empty()) {
                     neighbor->event_loading_done();
-                } else if (neighbor->lsr_retransmit_timer == 0) {
+                } else if (neighbor->lsr_manager.timer == 0) {
                     this->send_lsr_packet(neighbor);
+                    neighbor->lsr_manager.timer = this->rxmt_interval;
                 }
             }
 
@@ -99,9 +100,10 @@ void Interface::send_dd_packet(Neighbor *neighbor) {
                (struct sockaddr*)&dst_sockaddr, sizeof(dst_sockaddr)) < 0) {
         perror("[Thread]SendHelloPacket: sendto");
     } 
-    memcpy(neighbor->dd_last_send, this->send_buffer, 2048);
-    if (neighbor->b_MS) {
-        neighbor->dd_retransmit_timer = 10;
+    auto &dd_manager = neighbor->dd_manager;
+    memcpy(dd_manager.last_send, this->send_buffer, 4096);
+    if (dd_manager.b_MS) {
+        dd_manager.timer = rxmt_interval;
     }
 }
 
@@ -112,14 +114,15 @@ void Interface::send_last_dd_packet(Neighbor *neighbor) {
     dst_sockaddr.sin_family = AF_INET;
     dst_sockaddr.sin_addr.s_addr = neighbor->ip;
     if (sendto(this->send_socket_fd, 
-               neighbor->dd_last_send, 
+               neighbor->dd_manager.last_send, 
                ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 
                0, 
                (struct sockaddr*)&dst_sockaddr, sizeof(dst_sockaddr)) < 0) {
         perror("[Thread]SendHelloPacket: sendto");
     } 
-    if (neighbor->b_MS) {
-        neighbor->dd_retransmit_timer = 10;
+    auto &dd_manager = neighbor->dd_manager;
+    if (dd_manager.b_MS) {
+        dd_manager.timer = rxmt_interval;
     }
 }
 
@@ -129,7 +132,7 @@ void Interface::send_lsr_packet(Neighbor *neighbor) {
     dst_sockaddr.sin_family = AF_INET;
     dst_sockaddr.sin_addr.s_addr = neighbor->ip;
 
-    ((OSPFLSR*)this->send_buffer)->fill(neighbor->req_v_lsas, this);
+    ((OSPFLSR*)this->send_buffer)->fill(neighbor->lsr_manager.req_v_lsas, this);
     if (sendto(this->send_socket_fd, 
                this->send_buffer, 
                ntohs(((OSPFHeader*)this->send_buffer)->packet_length), 

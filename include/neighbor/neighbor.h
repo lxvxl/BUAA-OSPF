@@ -8,6 +8,7 @@
 #include "../interface/interface.h"
 #include <vector>
 #include <map>
+#include <stdlib.h>
 
 struct Interface;
 struct OSPFDD;
@@ -33,28 +34,42 @@ struct Neighbor {
     uint8_t         priority;
     uint32_t        ip;
     uint32_t        inactivity_timer        = -1;
-    uint32_t        dd_retransmit_timer     = -1;
-    uint32_t        lsr_retransmit_timer    = -1;
-
-    uint32_t        dd_sequence_number; // DD序列号
-
-
-    uint8_t         b_MS: 1;
-    uint8_t         b_M : 1;
-    uint8_t         b_I : 1;
-    uint8_t         b_other: 5;
-
     Interface*      interface;
 
-    OSPFDD*         dd_last_recv;
-    OSPFDD*         dd_last_send;
-    int             dd_recorder;            //dd交换期间，下一个将要发送的header位置
-    std::vector<LSAHeader*> dd_r_lsa_headers; //dd交换期间，将要发送的lsa header列表
+    struct DDManager {
+        uint32_t        timer     = -1;
+        uint32_t        seq_number; // DD序列号
+        bool            b_MS;
+        bool            b_M;
+        bool            b_I;
+        OSPFDD*         last_recv;
+        OSPFDD*         last_send;
+        int             recorder;            //dd交换期间，下一个将要发送的header位置
+        std::vector<LSAHeader*> dd_r_lsa_headers; //dd交换期间，将要发送的lsa header列表
+        DDManager() {
+            last_recv = (OSPFDD*)malloc(4096);
+            last_send = (OSPFDD*)malloc(4096);
+        }
+        ~DDManager() {
+            free(last_recv);
+            free(last_send);
+        }
+        int             fill_lsa_headers(LSAHeader addr[]);
+        bool            has_more();
+        void            remove(LSAHeader *r_lsa, LSAHeader *new_r_lsa);
+        void            reset(); //进入EXSTART状态的时候使用
+        void            prepare();
+    } dd_manager;
 
-    std::vector<LSAHeader*> req_v_lsas;       //需要请求的LSA。这个要单独管理内存！
+    struct LSRManager {
+        std::vector<LSAHeader> req_v_lsas;
+        uint32_t timer;
+        void add_lsa(LSAHeader* v_lsa);
+        bool rm_lsa(LSAHeader* v_lsa);
+        void clear();
+    } lsr_manager;
 
-
-    struct LSURetransmitManager {
+    struct LSUManager {
         std::map<LSAHeader*, int> timer;        //r_lsa -> time
         void step_one();
         void get_retransmit_lsas(std::vector<LSAHeader*>& r_lsas);
@@ -92,9 +107,5 @@ struct Neighbor {
     void            event_inactivity_timer();
     //由下层协议说明，邻居不可到达。
     void            event_ll_down();     
-
-    bool            dd_has_more_lsa();
-    int             fill_lsa_headers(LSAHeader *addr);
-    bool            rm_from_reqs(LSAHeader *v_lsa);
 };
 #endif 

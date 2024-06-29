@@ -37,6 +37,13 @@ int main() {
             std::unique_lock<std::mutex> lock(router::mutex);
             router::routing_table.write_routing();
             lock.unlock();  
+        } else if (inst == "dis state") {
+            for (Interface *interface : router::interfaces) {
+                std::cout<<"Interface "<<inet_ntoa({interface->ip})<<": "<<(int)interface->state;
+                for (Neighbor *neighbor : interface->neighbors) {
+                    std::cout<<"\tNeighbor "<<inet_ntoa({neighbor->ip})<<": "<<(int)neighbor->state;
+                }
+            }
         } else {
             std::cout<<"illegal instruction!"<<std::endl;
         }

@@ -108,22 +108,24 @@ int OSPFDD::get_lsa_num() {
 }
 
 void OSPFDD::fill(Neighbor *neighbor) {
+    auto &dd_manager = neighbor->dd_manager;
+
     this->interface_mtu      = htons(router::config::MTU);   // 接口MTU
     this->options            = router::config::options;
-    this->b_MS               = neighbor->b_MS;
-    this->b_I                = neighbor->b_I;
+    this->b_MS               = dd_manager.b_MS;
+    this->b_I                = dd_manager.b_I;
     this->b_other            = 0;
-    this->dd_sequence_number = htonl(neighbor->dd_sequence_number); // DD序列号
+    this->dd_sequence_number = htonl(dd_manager.seq_number); // DD序列号
     //neighbor->dd_sequence_number++;
 
     Interface *interface = neighbor->interface;
     int header_num;
-    if (neighbor->b_I) {
+    if (dd_manager.b_I) {
         header_num = 0; 
         this->b_M  = 1;
     } else {
-        header_num = neighbor->fill_lsa_headers(this->lsa_headers);
-        this->b_M  = neighbor->dd_has_more_lsa();
+        header_num = dd_manager.fill_lsa_headers(this->lsa_headers);
+        this->b_M  = dd_manager.has_more();
     } 
     
     ((OSPFHeader*)this)->fill(OSPFPacketType::DD, interface->area_id, sizeof(OSPFDD) + header_num * sizeof(LSAHeader));
@@ -136,12 +138,12 @@ void OSPFDD::fill(Neighbor *neighbor) {
 //    printf("Link State ID: %d\n", ntohl(link_state_id)); // 转换为主机字节序
 //    printf("Advertising Router: %d\n", ntohl(advertising_router)); // 转换为主机字节序
 //}
-void OSPFLSR::fill(std::vector<LSAHeader*>& headers, Interface *interface) {
+void OSPFLSR::fill(std::vector<LSAHeader>& headers, Interface *interface) {
     size_t req_num = headers.size();
     for (uint32_t i = 0; i < req_num; i++) {
-        this->reqs[i].ls_type            = htonl((uint32_t)headers[i]->ls_type);
-        this->reqs[i].link_state_id      = headers[i]->link_state_id;
-        this->reqs[i].advertising_router = headers[i]->advertising_router;
+        this->reqs[i].ls_type            = htonl((uint32_t)headers[i].ls_type);
+        this->reqs[i].link_state_id      = headers[i].link_state_id;
+        this->reqs[i].advertising_router = headers[i].advertising_router;
     }
     ((OSPFHeader*)this)->fill(OSPFPacketType::LSR, interface->area_id, sizeof(OSPFLSR) + req_num * sizeof(ReqItem));
 }

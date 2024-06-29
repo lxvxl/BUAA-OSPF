@@ -35,19 +35,7 @@ Interface::Interface(const char *name, uint32_t ip, uint32_t mask, uint16_t metr
 void Interface::clear_invalid_req(LSAHeader *old_r_lsa, LSAHeader *new_r_lsa) {
     for (auto neighbor : neighbors) {
         //清除待发送的dd包中的相应lsa。如果new_lsa不为空，则使用new_lsa来代替原有的lsa。
-        for (int i = neighbor->dd_r_lsa_headers.size() - 1; i >= 0; i--) {
-            //如果要清除的实例比dd列表中的实例相同或者新
-            if (old_r_lsa->compare(neighbor->dd_r_lsa_headers[i]) <= 0) {
-                if (new_r_lsa == NULL) {
-                    neighbor->dd_r_lsa_headers.erase(neighbor->dd_r_lsa_headers.begin() + i);
-                    if (neighbor->dd_recorder >= i) {
-                        neighbor->dd_recorder--;
-                    }
-                } else {
-                    neighbor->dd_r_lsa_headers[i] = new_r_lsa;
-                }
-            }
-        }
+        neighbor->dd_manager.remove(old_r_lsa, new_r_lsa);
         //清除待重传LSU中的LSA
         neighbor->lsu_retransmit_manager.remove_lsa(old_r_lsa);
     }

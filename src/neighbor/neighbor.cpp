@@ -22,38 +22,15 @@ Neighbor::Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip) {
     this->priority  = hello_packet->rtr_priority;
     this->ip        = ip;
     this->inactivity_timer = -1;
-    this->dd_retransmit_timer = -1;
-    this->lsr_retransmit_timer = -1;
+    this->dd_manager.timer = -1;
+    this->lsr_manager.timer = -1;
     this->interface = interface;
-    this->b_I       = 1;
-    this->b_M       = 1;
-    this->b_MS      = 1;
-    this->dd_last_recv = (OSPFDD*)calloc(1, 4096);
-    this->dd_last_send = (OSPFDD*)calloc(1, 4096);
 }
 
 Neighbor::Neighbor() {
-    this->dd_last_recv = (OSPFDD*)calloc(1, 4);
-    this->dd_last_send = (OSPFDD*)calloc(1, 4);
 }
 
 Neighbor::~Neighbor() {
-    free(dd_last_recv);
-    free(dd_last_send);
-    for (LSAHeader* lsa : req_v_lsas) {
-        delete lsa;
-    }
-}
-
-bool Neighbor::rm_from_reqs(LSAHeader *v_lsa) {
-    for (int i = req_v_lsas.size() - 1; i >= 0; i--) {
-        if (v_lsa->compare(req_v_lsas[i]) <= 0) {
-            delete req_v_lsas[i];
-            req_v_lsas.erase(req_v_lsas.begin() + i);
-            return true;
-        }
-    }
-    return false;
 }
 
 
@@ -86,12 +63,7 @@ void Neighbor::event_2way_received() {
             || this->interface->bdr == this->interface->ip
             || this->interface->dr == this->ip
             || this->interface->bdr == this->ip) {
-        this->dd_sequence_number = router::router_id;
-        this->b_MS = 1;
-        this->b_M = 1;
-        this->b_I = 1;
-        //this->dd_reset_lsas();
-        this->state = EXSTART;
+        dd_manager.reset();
         interface->send_dd_packet(this);
     } else {
         this->state = _2WAY;
@@ -106,13 +78,9 @@ void Neighbor::event_negotiation_done() {
     logger::event_log(this, "negotiation_done");
     event_pre_aspect
 
-    this->dd_recorder = 0;
-    LSADatabase *db = &router::lsa_db;
-    db->get_all_lsa(this->dd_r_lsa_headers);
-    for (auto header : req_v_lsas) {
-        delete header;
-    }
-    req_v_lsas.clear();
+    dd_manager.prepare();
+
+    lsr_manager.clear();
 
     this->state = NeighborState::EXCHANGE;
     event_post_aspect
@@ -122,13 +90,13 @@ void Neighbor::event_exchange_done() {
     logger::event_log(this, "exchange done");
     event_pre_aspect
 
-    this->dd_retransmit_timer = -1;
-    if (this->req_v_lsas.size() == 0) {
+    lsr_manager.timer = -1;
+    if (this->lsr_manager.req_v_lsas.size() == 0) {
         this->state = FULL;
-        this->lsr_retransmit_timer = -1;
+        this->lsr_manager.timer = -1;
     } else {
         this->state = LOADING;
-        this->lsr_retransmit_timer = 1;
+        this->lsr_manager.timer = 1;
     }
 
     event_post_aspect
@@ -137,15 +105,8 @@ void Neighbor::event_exchange_done() {
 void Neighbor::event_bad_lsreq() {
     logger::event_log(this, "bad ls req");
     event_pre_aspect
-    for (auto header : req_v_lsas) {
-        delete header;
-    }
-    req_v_lsas.clear();
-    this->dd_sequence_number = router::router_id;
-    this->b_MS = 1;
-    this->b_M = 1;
-    this->b_I = 1;
-    this->state = EXSTART;
+    lsr_manager.clear();
+    dd_manager.reset();
     interface->send_dd_packet(this);
     event_post_aspect
 }   
@@ -167,12 +128,7 @@ void Neighbor::event_is_adj_ok() {
                 || this->interface->bdr == this->interface->ip
                 || this->interface->dr == this->ip
                 || this->interface->bdr == this->ip) {
-            this->dd_sequence_number = router::router_id;
-            this->b_MS = 1;
-            this->b_M = 1;
-            this->b_I = 1;
-            //this->dd_reset_lsas();
-            this->state = EXSTART;
+            dd_manager.reset();
             interface->send_dd_packet(this);
         } else {
             this->state = _2WAY;
@@ -183,10 +139,7 @@ void Neighbor::event_is_adj_ok() {
                 && this->interface->dr != this->ip
                 && this->interface->bdr != this->ip) {
             this->state = _2WAY;
-            for (auto header : req_v_lsas) {
-                delete header;
-            }
-            req_v_lsas.clear();
+            lsr_manager.clear();
             lsu_retransmit_manager.timer.clear();
         }
     }
@@ -197,15 +150,8 @@ void Neighbor::event_is_adj_ok() {
 void Neighbor::event_seq_num_mismatch() {
     logger::event_log(this, "seq num mismatch");
     event_pre_aspect
-    for (auto header : req_v_lsas) {
-        delete header;
-    }
-    req_v_lsas.clear();
-    this->dd_sequence_number = router::router_id;
-    this->b_MS = 1;
-    this->b_M = 1;
-    this->b_I = 1;
-    this->state = EXSTART;
+    lsr_manager.clear();
+    dd_manager.reset();
     interface->send_dd_packet(this);
     event_post_aspect
 }  
@@ -244,10 +190,10 @@ void Neighbor::event_ll_down() {
     event_post_aspect
 }   
 
-int Neighbor::fill_lsa_headers(LSAHeader *headers) {
+int Neighbor::DDManager::fill_lsa_headers(LSAHeader headers[]) {
     int i = 0;
     int max = (router::config::MTU - sizeof(OSPFDD)) / sizeof(LSAHeader);
-    for (;this->dd_recorder < (int)dd_r_lsa_headers.size() && i < max; i++, this->dd_recorder++) {
+    for (;this->recorder < (int)dd_r_lsa_headers.size() && i < max; i++, this->recorder++) {
         headers[i] = *dd_r_lsa_headers[i];
         //headers[i].show();
         headers[i].hton();
@@ -255,17 +201,68 @@ int Neighbor::fill_lsa_headers(LSAHeader *headers) {
     return i;
 }
 
-bool Neighbor::dd_has_more_lsa() {
-    return dd_recorder < (int) dd_r_lsa_headers.size();
+bool Neighbor::DDManager::has_more() {
+    return recorder < (int) dd_r_lsa_headers.size();
 }
 
-void Neighbor::LSURetransmitManager::step_one() {
+void Neighbor::DDManager::remove(LSAHeader *r_lsa, LSAHeader *new_r_lsa) {
+    for (int i = 0; i < dd_r_lsa_headers.size(); i++) {
+        //如果要清除的实例比dd列表中的实例相同或者新
+        if (dd_r_lsa_headers[i] == r_lsa) {
+            if (new_r_lsa == NULL) {
+                dd_r_lsa_headers.erase(dd_r_lsa_headers.begin() + i);
+                if (recorder >= i) {
+                    recorder--;
+                }
+            } else {
+                dd_r_lsa_headers[i] = new_r_lsa;
+            }
+        }
+    }
+}
+
+void Neighbor::DDManager::reset() {
+    timer = -1;
+    seq_number = router::router_id;
+    b_MS = true;
+    b_M = true;
+    b_I = true;
+    memset(last_recv, 0, 4096);
+    memset(last_send, 0, 4096);
+    recorder = 0;
+    dd_r_lsa_headers.clear();
+}
+
+void Neighbor::DDManager::prepare() {
+    router::lsa_db.get_all_lsa(dd_r_lsa_headers);
+    recorder = 0;
+}
+
+bool Neighbor::LSRManager::rm_lsa(LSAHeader *v_lsa) {
+    for (int i = req_v_lsas.size() - 1; i >= 0; i--) {
+        if (v_lsa->compare(&req_v_lsas[i]) <= 0) {
+            req_v_lsas.erase(req_v_lsas.begin() + i);
+            return true;
+        }
+    }
+    return false;
+}
+
+void Neighbor::LSRManager::clear() {
+    req_v_lsas.clear();
+}
+
+void Neighbor::LSRManager::add_lsa(LSAHeader *v_lsa) {
+    req_v_lsas.push_back(*v_lsa);
+}
+
+void Neighbor::LSUManager::step_one() {
     for (auto it = timer.begin(); it != timer.end(); ++it) {
         it->second--;
     }
 }
 
-void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>& r_lsas) {
+void Neighbor::LSUManager::get_retransmit_lsas(std::vector<LSAHeader*>& r_lsas) {
     for (auto& pair : timer) {
         if (pair.second <= 0) {
             r_lsas.push_back(pair.first);
@@ -274,7 +271,7 @@ void Neighbor::LSURetransmitManager::get_retransmit_lsas(std::vector<LSAHeader*>
     }
 }
 
-void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* r_lsa) {
+void Neighbor::LSUManager::remove_lsa(LSAHeader* r_lsa) {
     for (auto it = timer.begin(); it != timer.end();) {
         //清除与lsa相同或者比lsa更老的实例
         if (it->first->compare(r_lsa) >= 0) {
@@ -286,6 +283,6 @@ void Neighbor::LSURetransmitManager::remove_lsa(LSAHeader* r_lsa) {
     }
 }
 
-void Neighbor::LSURetransmitManager::add_lsa(LSAHeader* r_lsa) {
+void Neighbor::LSUManager::add_lsa(LSAHeader* r_lsa) {
     timer[r_lsa] = 5;
 }

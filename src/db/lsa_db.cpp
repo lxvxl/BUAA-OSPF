@@ -148,7 +148,7 @@ void LSADatabase::flood(LSAHeader *r_lsa, Interface* origin, InterfaceState send
                 continue;
             }
             if (neighbor->state == EXCHANGE || neighbor->state == LOADING) {
-                neighbor->rm_from_reqs(r_lsa);
+                neighbor->lsr_manager.rm_lsa(r_lsa);
             }
             if (origin == interface) {
                 continue;

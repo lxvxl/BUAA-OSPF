@@ -156,8 +156,9 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
     if (neighbor == NULL) {
         return;
     }
-    OSPFDD *last_dd = neighbor->dd_last_recv;
+    OSPFDD *last_dd = neighbor->dd_manager.last_recv;
     uint32_t packet_dd_seq_num = ntohl(dd_packet->dd_sequence_number);
+    auto &dd_manager = neighbor->dd_manager;
     switch (neighbor->state) {
         case DOWN:
         case ATTEMPT:
@@ -188,16 +189,16 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             neighbor->event_negotiation_done();
             if (ntohl(dd_packet->header.router_id) > ntohl(router::router_id)) {
                 //自己是从机
-                neighbor->b_MS = 0;
-                neighbor->dd_sequence_number = ntohl(dd_packet->dd_sequence_number);
-                neighbor->b_I = 0;
-                neighbor->dd_retransmit_timer = -1;
+                dd_manager.b_MS = 0;
+                dd_manager.seq_number = ntohl(dd_packet->dd_sequence_number);
+                dd_manager.b_I = 0;
+                dd_manager.timer = -1;
                 interface->send_dd_packet(neighbor);
-                neighbor->dd_sequence_number++;
+                dd_manager.seq_number++;
             } else {
                 //自己是主机
-                neighbor->b_MS = 1;
-                neighbor->b_I = 0;
+                dd_manager.b_MS = 1;
+                dd_manager.b_I = 0;
             }
             break;
         case EXCHANGE:
@@ -206,14 +207,14 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                     && dd_packet->b_M == last_dd->b_M
                     && dd_packet->b_MS == last_dd->b_MS
                     && dd_packet->dd_sequence_number == last_dd->dd_sequence_number) {
-                if (!neighbor->b_MS) {
+                if (!dd_manager.b_MS) {
                     interface->send_last_dd_packet(neighbor);
                 }
                 logger::event_log(interface, "received repeated DD packet");
                 return;
             } 
             //主从位不匹配或意外设置初始位或选项域与之前不同
-            if (!(dd_packet->b_MS ^ neighbor->b_MS) || dd_packet->b_I || last_dd->options != dd_packet->options) {
+            if (!(dd_packet->b_MS ^ dd_manager.b_MS) || dd_packet->b_I || last_dd->options != dd_packet->options) {
                 logger::event_log(interface, "received unmatched MS or I or options in DD packet");
                 neighbor->event_seq_num_mismatch();
                 return;
@@ -226,7 +227,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             //     neighbor->event_seq_num_mismatch();
             //     return;
             // }
-            if (neighbor->dd_sequence_number != packet_dd_seq_num ) {
+            if (neighbor->dd_manager.seq_number != packet_dd_seq_num ) {
                 logger::event_log(interface, "received unmatched sequence number in DD packet");
                 neighbor->event_seq_num_mismatch();
                 return;
@@ -235,25 +236,23 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             for (int i = 0; i < dd_packet->get_lsa_num(); i++) {
                 dd_packet->lsa_headers[i].ntoh();
                 if (router::lsa_db.get_lsa(&dd_packet->lsa_headers[i]) == NULL) {
-                    LSAHeader *req_header = new LSAHeader;
-                    *req_header = dd_packet->lsa_headers[i];
-                    neighbor->req_v_lsas.push_back(req_header);
+                    neighbor->lsr_manager.add_lsa(&dd_packet->lsa_headers[i]);
                 }
             }
             // 判断是否还需要发送
-            if (neighbor->b_MS) { //如果是主机
-                if (neighbor->dd_has_more_lsa() || dd_packet->b_M) {
-                    neighbor->dd_sequence_number++;
+            if (dd_manager.b_MS) { //如果是主机
+                if (neighbor->dd_manager.has_more() || dd_packet->b_M) {
+                    neighbor->dd_manager.seq_number++;
                     interface->send_dd_packet(neighbor);
                 } else {
                     neighbor->event_exchange_done();
                 }
             } else { //如果是从机
-                if (!neighbor->dd_has_more_lsa() && !dd_packet->b_M) {
+                if (!neighbor->dd_manager.has_more() && !dd_packet->b_M) {
                     neighbor->event_exchange_done();
                 }
                 interface->send_dd_packet(neighbor);
-                neighbor->dd_sequence_number++;
+                neighbor->dd_manager.seq_number++;
             }
             break;
         case LOADING:
@@ -267,7 +266,7 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
                     && dd_packet->b_M == last_dd->b_M
                     && dd_packet->b_MS == last_dd->b_MS
                     && dd_packet->dd_sequence_number == last_dd->dd_sequence_number) {
-                if (!neighbor->b_MS) {
+                if (!dd_manager.b_MS) {
                     interface->send_last_dd_packet(neighbor);
                 }
             } else {
@@ -336,7 +335,7 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
             //}
             r_lsa = lsa_db.update(v_lsa);
             //查看该实例是否是请求的LSA。如果是，将其删除
-            if (daddr == interface->ip && neighbor->rm_from_reqs(v_lsa)) {
+            if (daddr == interface->ip && neighbor->lsr_manager.rm_lsa(v_lsa)) {
                 logger::other_log(interface, "got a quried lsa");
                 //v_lsa->show();
                 continue;
@@ -348,7 +347,7 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
             neighbor->lsu_retransmit_manager.remove_lsa(r_lsa);
             interface->send_lsack_packet(v_lsa, daddr);
         } else { //数据库中存在更新的实例或者相同的实例
-            if (neighbor->rm_from_reqs(v_lsa)) { //如果这个实例正在请求列表中，生成BadLSReq事件
+            if (neighbor->lsr_manager.rm_lsa(v_lsa)) { //如果这个实例正在请求列表中，生成BadLSReq事件
                 // std::cout<<"querying lsa:\n";
                 // v_lsa->show();
                 // std::cout<<"but we have lsa:\n";

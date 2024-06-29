@@ -149,7 +149,7 @@ struct OSPFLSR {
     };
     OSPFHeader  header; 
     ReqItem     reqs[];
-    void        fill(std::vector<LSAHeader*>& headers, Interface *interface);
+    void        fill(std::vector<LSAHeader>& headers, Interface *interface);
     int         get_req_num();
 };
 
