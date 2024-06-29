@@ -34,10 +34,12 @@ void Interface::send_thread_runner() {
             this->event_wait_timer();
         }
 
-        for (auto neighbor : this->neighbors) {
+        for (int i = neighbors.size() - 1; i >= 0; i--) {
+            auto neighbor = neighbors[i];
             neighbor->inactivity_timer--;
             if (neighbor->inactivity_timer == 0) {
                 neighbor->event_kill_nbr();
+                neighbors.erase(neighbors.begin() + i);
             }
 
             //查看dd报文重发
@@ -65,12 +67,14 @@ void Interface::send_thread_runner() {
                 send_lsu_packet(retransmit_r_lsas, neighbor->ip);
             }
         }
+
         lock.unlock();
     }
     logger::event_log(this, "发送线程已关闭");
 }
 
 void Interface::send_hello_packet() {
+    //std::cout<<"send a hello"<<std::endl;
     struct sockaddr_in dst_sockaddr;
     memset(&dst_sockaddr, 0, sizeof(dst_sockaddr));
     dst_sockaddr.sin_family = AF_INET;

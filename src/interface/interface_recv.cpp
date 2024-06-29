@@ -112,6 +112,11 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
         neighbor = new Neighbor(hello_packet, interface, saddr);
         interface->neighbors.push_back(neighbor);
     }
+    uint32_t neighbor_pre_dr = neighbor->dr;
+    uint32_t neighbor_pre_bdr = neighbor->bdr;
+    neighbor->dr = hello_packet->designated_router;
+    neighbor->bdr = hello_packet->backup_designated_router;
+
     neighbor->event_hello_received();
 
     //若邻居的hello包中有自己
@@ -121,26 +126,27 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
         neighbor->event_1way_received();
         return;
     }
-    //如果邻居宣告自己为 DR，且宣告BDR为 0.0.0.0，且接收接口状态机的状态为 Waiting，执行事件BackupSeen。
-    if (hello_packet->designated_router == neighbor->ip 
-            && hello_packet->backup_designated_router == inet_addr("0.0.0.0") 
+    //std::cout<<"neighbor dr and br"<<inet_ntoa({neighbor->dr});
+    //std::cout<<" "<<inet_ntoa({neighbor->bdr})<<std::endl;
+    //如果邻居宣告自己为 DR，且宣告BDR为 0.0.0.0，且接口状态机的状态为 Waiting，执行事件BackupSeen。
+    if (neighbor->dr == neighbor->ip 
+            && neighbor->bdr == inet_addr("0.0.0.0") 
             && interface->state == WAITING) {
         interface->event_backup_seen();
         return;
     }
     //否则，如果以前不宣告的邻居宣告自己为 DR，或以前宣告的邻居现在不宣告自己为 DR，接收接口状态机调度执行事件NeighborChange。
-    if ((hello_packet->designated_router == neighbor->ip) ^ (neighbor->dr == neighbor->ip)) {
+    if ((neighbor->dr == neighbor->ip) ^ (neighbor_pre_dr == neighbor->ip)) {
         interface->event_neighbor_change();
         return;
     }
     //如果邻居宣告自己为 BDR，且接收接口状态机的状态为 Waiting，接收接口状态机调度执行事件 BackupSeen。
-    if (hello_packet->backup_designated_router == neighbor->ip 
-            && interface->state == WAITING) {
+    if (neighbor->bdr == neighbor->ip && interface->state == WAITING) {
         interface->event_backup_seen();
         return;
     }
     //否则，如果以前不宣告的邻居宣告自己为 BDR，或以前宣告的邻居现在不宣告自己 BDR，接收接口状态机调度执行事件 NeighborChange。
-    if ((hello_packet->backup_designated_router == neighbor->ip) ^ (neighbor->bdr == neighbor->ip)) {
+    if ((neighbor->bdr == neighbor->ip) ^ (neighbor_pre_bdr == neighbor->ip)) {
         interface->event_neighbor_change();
         return;
     }

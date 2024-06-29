@@ -1,14 +1,72 @@
-==9358== Invalid read of size 8
-==9358==    at 0x405731: std::_Rb_tree<LSAHeader*, std::pair<LSAHeader* const, int>, std::_Select1st<std::pair<LSAHeader* const, int> >, std::less<LSAHeader*>, std::allocator<std::pair<LSAHeader* const, int> > >::begin() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x4043C5: std::map<LSAHeader*, int, std::less<LSAHeader*>, std::allocator<std::pair<LSAHeader* const, int> > >::begin() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x425778: Neighbor::LSURetransmitManager::remove_lsa(LSAHeader*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x4118F8: handle_recv_lsack(OSPFLSAck*, Interface*) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x41062E: Interface::recv_thread_runner() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x41680A: void std::_Mem_fn_base<void (Interface::*)(), true>::operator()<, void>(Interface*) const (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x41675E: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::__call<void, , 0ul>(std::tuple<>&&, std::_Index_tuple<0ul>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x4166B4: void std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)>::operator()<, void>() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x416679: void std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::_M_invoke<>(std::_Index_tuple<>) (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x4165CF: std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()>::operator()() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x41655F: std::thread::_Impl<std::_Bind_simple<std::_Bind<std::_Mem_fn<void (Interface::*)()> (Interface*)> ()> >::_M_run() (in /home/zj/桌面/ospf/BUAA-OSPF/myOspf)
-==9358==    by 0x4EF2C7F: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21)
-==9358==  Address 0x98 is not stack'd, malloc'd or (recently) free'd
+[Interface enp0s9]: interface up
+[Interface enp0s9]: DOWN --> WAITING
+[Interface enp0s9]: initing recv thread
+[Interface enp0s9]: initing hello thread
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 40.1.1.2]: DOWN --> INIT
+[Neighbor 40.1.1.2]: event 1way
+[Neighbor 40.1.1.2]: 2way_received
+[Neighbor 40.1.1.2]: INIT --> 2WAY
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 30.1.1.1]: DOWN --> INIT
+[Neighbor 30.1.1.1]: 2way_received
+[Neighbor 30.1.1.1]: INIT --> 2WAY
+[Neighbor 30.1.1.1]: adj_ok?
+[Neighbor 30.1.1.1]: 2WAY --> EXSTART
+[Neighbor 30.1.1.1]: negotiation_done
+[Neighbor 30.1.1.1]: EXSTART --> EXCHANGE
+[Neighbor 30.1.1.1]: exchange done
+[Neighbor 30.1.1.1]: EXCHANGE --> LOADING
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 30.1.1.1]: loading done
+[Neighbor 30.1.1.1]: LOADING --> FULL
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: wait timer
+[Interface enp0s9]: elect DR and BDR
+[Interface enp0s9]: New DR: 40.1.1.2, New BDR: 40.1.1.1
+[Neighbor 40.1.1.2]: adj_ok?
+[Neighbor 40.1.1.2]: 2WAY --> EXSTART
+[Interface enp0s9]: WAITING --> BACKUP
+[Interface enp0s9]: dd refused: wrong format during EXSTART state, lsa_num: 6 b_I: 0
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 30.1.1.1]: hello_received

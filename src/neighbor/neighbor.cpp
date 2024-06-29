@@ -17,8 +17,8 @@
 
 Neighbor::Neighbor(OSPFHello *hello_packet, Interface *interface, uint32_t ip) {
     this->router_id = hello_packet->header.router_id;
-    this->dr        = hello_packet->designated_router;
-    this->bdr       = hello_packet->backup_designated_router;
+    this->dr        = 0;
+    this->bdr       = 0;
     this->priority  = hello_packet->rtr_priority;
     this->ip        = ip;
     this->inactivity_timer = -1;
@@ -53,17 +53,18 @@ void Neighbor::event_start() {
 }   
 
 void Neighbor::event_2way_received() {
+    if (this->state != INIT) {
+        return;
+    }
     logger::event_log(this, "2way_received");
     event_pre_aspect
 
-    if (this->state != INIT) {
-        goto end;
-    }
     if (this->interface->dr == this->interface->ip
             || this->interface->bdr == this->interface->ip
             || this->interface->dr == this->ip
             || this->interface->bdr == this->ip) {
         dd_manager.reset();
+        state = EXSTART;
         interface->send_dd_packet(this);
     } else {
         this->state = _2WAY;
@@ -107,6 +108,7 @@ void Neighbor::event_bad_lsreq() {
     event_pre_aspect
     lsr_manager.clear();
     dd_manager.reset();
+    state = EXSTART;
     interface->send_dd_packet(this);
     event_post_aspect
 }   
@@ -129,6 +131,7 @@ void Neighbor::event_is_adj_ok() {
                 || this->interface->dr == this->ip
                 || this->interface->bdr == this->ip) {
             dd_manager.reset();
+            state = EXSTART;
             interface->send_dd_packet(this);
         } else {
             this->state = _2WAY;
@@ -152,6 +155,7 @@ void Neighbor::event_seq_num_mismatch() {
     event_pre_aspect
     lsr_manager.clear();
     dd_manager.reset();
+    state = EXSTART;
     interface->send_dd_packet(this);
     event_post_aspect
 }  
@@ -206,7 +210,7 @@ bool Neighbor::DDManager::has_more() {
 }
 
 void Neighbor::DDManager::remove(LSAHeader *r_lsa, LSAHeader *new_r_lsa) {
-    for (int i = 0; i < dd_r_lsa_headers.size(); i++) {
+    for (uint32_t i = 0; i < dd_r_lsa_headers.size(); i++) {
         //如果要清除的实例比dd列表中的实例相同或者新
         if (dd_r_lsa_headers[i] == r_lsa) {
             if (new_r_lsa == NULL) {

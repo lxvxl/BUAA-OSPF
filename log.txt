@@ -6,11 +6,27 @@
 [Interface enp0s10]: initing hello thread
 [Interface enp0s9]: initing recv thread
 [Interface enp0s9]: initing hello thread
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 30.1.1.1]: DOWN --> INIT
+[Neighbor 30.1.1.1]: 2way_received
+[Neighbor 30.1.1.1]: INIT --> 2WAY
+[Interface enp0s10]: backup seen
+[Interface enp0s10]: elect DR and BDR
+[Interface enp0s10]: New DR: 30.1.1.1, New BDR: 30.1.1.2
+[Neighbor 30.1.1.1]: adj_ok?
+[Neighbor 30.1.1.1]: 2WAY --> EXSTART
+[Interface enp0s10]: WAITING --> BACKUP
+[Neighbor 30.1.1.1]: negotiation_done
+[Neighbor 30.1.1.1]: EXSTART --> EXCHANGE
+[Neighbor 30.1.1.1]: exchange done
+[Neighbor 30.1.1.1]: EXCHANGE --> LOADING
+[Interface enp0s10]: got a quried lsa
+[Interface enp0s10]: got a quried lsa
 [Neighbor 40.1.1.2]: hello_received
 [Neighbor 40.1.1.2]: DOWN --> INIT
 [Neighbor 40.1.1.2]: 2way_received
 [Neighbor 40.1.1.2]: INIT --> 2WAY
-[Interface enp0s9]: wait timer
+[Interface enp0s9]: backup seen
 [Interface enp0s9]: elect DR and BDR
 [Interface enp0s9]: New DR: 40.1.1.2, New BDR: 40.1.1.1
 [Neighbor 40.1.1.2]: adj_ok?
@@ -20,20 +36,61 @@
 [Neighbor 40.1.1.2]: EXSTART --> EXCHANGE
 [Neighbor 40.1.1.2]: exchange done
 [Neighbor 40.1.1.2]: EXCHANGE --> LOADING
-[Neighbor 40.1.1.2]: hello_received
-[Neighbor 40.1.1.2]: 2way_received
-[Neighbor 40.1.1.2]: hello_received
-[Neighbor 40.1.1.2]: 2way_received
-[Neighbor 40.1.1.2]: hello_received
-[Neighbor 40.1.1.2]: 2way_received
-[Interface enp0s10]: wait timer
-[Interface enp0s10]: elect DR and BDR
-[Interface enp0s10]: New DR: 30.1.1.2, New BDR: 0.0.0.0
-[Interface enp0s10]: WAITING --> DR
 [Interface enp0s9]: got a quried lsa
+[Interface enp0s9]: got a quried lsa
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 30.1.1.1]: loading done
+[Neighbor 30.1.1.1]: LOADING --> FULL
 [Neighbor 40.1.1.2]: hello_received
-[Neighbor 40.1.1.2]: 2way_received
+[Neighbor 40.1.1.2]: loading done
+[Neighbor 40.1.1.2]: LOADING --> FULL
+[Neighbor 30.1.1.1]: hello_received
 [Neighbor 40.1.1.2]: hello_received
-[Neighbor 40.1.1.2]: 2way_received
+[Neighbor 30.1.1.1]: hello_received
 [Neighbor 40.1.1.2]: hello_received
+
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 40.1.1.2]: event 1way
+[Interface enp0s9]: neighbor change
+[Interface enp0s9]: elect DR and BDR
+[Interface enp0s9]: New DR: 40.1.1.1, New BDR: 0.0.0.0
+[Interface enp0s9]: BACKUP --> DR
+[Neighbor 40.1.1.2]: FULL --> INIT
+[Interface enp0s9]: try to generate a Network LSA
+[Neighbor 40.1.1.2]: hello_received
+[Neighbor 40.1.1.2]: event 1way
+[Interface enp0s9]: neighbor change
+[Interface enp0s9]: elect DR and BDR
+[Interface enp0s9]: New DR: 40.1.1.1, New BDR: 0.0.0.0
 [Neighbor 40.1.1.2]: 2way_received
+[Interface enp0s9]: neighbor change
+[Interface enp0s9]: elect DR and BDR
+[Interface enp0s9]: New DR: 40.1.1.1, New BDR: 40.1.1.2
+[Neighbor 40.1.1.2]: adj_ok?
+[Neighbor 40.1.1.2]: INIT --> EXSTART
+[Neighbor 40.1.1.2]: negotiation_done
+[Neighbor 40.1.1.2]: EXSTART --> EXCHANGE
+[Neighbor 40.1.1.2]: exchange done
+[Neighbor 40.1.1.2]: EXCHANGE --> FULL
+[Interface enp0s9]: try to generate a Network LSA
+[Neighbor 40.1.1.2]: seq num mismatch
+[Neighbor 40.1.1.2]: FULL --> EXSTART
+[Interface enp0s9]: try to generate a Network LSA
+[Interface enp0s9]: dd refused: wrong format during EXSTART state, lsa_num: 8 b_I: 0
+[Neighbor 30.1.1.1]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 40.1.1.2]: hello_received
+[Interface enp0s9]: neighbor change
+[Interface enp0s9]: elect DR and BDR
+[Interface enp0s9]: New DR: 40.1.1.1, New BDR: 40.1.1.2
+[Neighbor 40.1.1.2]: adj_ok?
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 40.1.1.2]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 40.1.1.2]: hello_received
+[Interface enp0s9]: dd refused: repeated packet
+[Neighbor 30.1.1.1]: hello_received
+[Neighbor 40.1.1.2]: hello_received

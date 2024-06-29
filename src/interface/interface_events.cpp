@@ -59,7 +59,7 @@ end:
  * 路由器已经探知在网络上是否存在 BDR
  */
 void Interface::event_backup_seen() {
-    logger::event_log(this, "wait timer");
+    logger::event_log(this, "backup seen");
     event_pre_aspect
 
     if (this->state != InterfaceState::WAITING) {

@@ -172,6 +172,9 @@ void RoutingTable::dijkstra() {
             }
         }
         if (next_router_node != NULL) {
+            target->show();
+            next_router_node->show();
+            std::cout<<std::endl;
             next_step[target] = next_router_node->neighbor_2_interface[step];
         }
     }
