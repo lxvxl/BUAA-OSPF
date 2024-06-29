@@ -23,25 +23,51 @@ NetNode* RoutingTable::get_net_node(uint32_t ip, uint32_t mask) {
 }
 
 
+//void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<NetworkLSA*>& network_lsas) {
+//    reset();
+//    // Process NetworkLSAs
+//    for (NetworkLSA* network_lsa : network_lsas) {
+//        get_net_node(network_lsa->header.link_state_id, network_lsa->network_mask);
+//        for (int i = 0; i < network_lsa->get_routers_num(); ++i) {
+//            uint32_t attached_router_id = network_lsa->attached_routers[i];
+//            get_router_node(attached_router_id);
+//        }
+//    }
+//    // Process RouterLSAs
+//    for (RouterLSA* router_lsa : router_lsas) {
+//        RouterNode *router_node = get_router_node(router_lsa->header.link_state_id);
+//        for (int i = 0; i < router_lsa->get_link_num(); ++i) {
+//            RouterLSALink& link = router_lsa->links[i];
+//            NetNode* net_node = get_net_node(link.link_id, link.type == TRAN ? 0x00ffffff : link.link_data);
+//            net_node->neighbor_nodes[router_node] = link.metric;
+//            router_node->neighbor_nodes[net_node] = link.metric;
+//            router_node->neighbor_2_interface[net_node] = link.type == TRAN ? link.link_data : link.link_id;
+//        }
+//    }
+//    me = get_router_node(router::router_id);
+//    dijkstra();
+//}
+
 void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<NetworkLSA*>& network_lsas) {
     reset();
     // Process NetworkLSAs
     for (NetworkLSA* network_lsa : network_lsas) {
-        get_net_node(network_lsa->header.link_state_id, network_lsa->network_mask);
-        for (int i = 0; i < network_lsa->get_routers_num(); ++i) {
-            uint32_t attached_router_id = network_lsa->attached_routers[i];
-            get_router_node(attached_router_id);
-        }
+        net_node_map[network_lsa->header.link_state_id] = new NetNode(network_lsa->header.link_state_id, network_lsa->network_mask);
     }
     // Process RouterLSAs
     for (RouterLSA* router_lsa : router_lsas) {
         RouterNode *router_node = get_router_node(router_lsa->header.link_state_id);
         for (int i = 0; i < router_lsa->get_link_num(); ++i) {
             RouterLSALink& link = router_lsa->links[i];
-            NetNode* net_node = get_net_node(link.link_id, link.type == TRAN ? 0x00ffffff : link.link_data);
-            net_node->neighbor_nodes[router_node] = link.metric;
+            NetNode* net_node;
+            if (link.type == TRAN) {
+                net_node = net_node_map[link.link_id];
+                router_node->neighbor_2_interface[net_node] = link.link_data;
+            } else if (link.type == STUB) {
+                net_node = new NetNode(link.link_id, link.link_data);
+            }
+            net_node->neighbor_nodes[router_node] = 0;
             router_node->neighbor_nodes[net_node] = link.metric;
-            router_node->neighbor_2_interface[net_node] = link.type == TRAN ? link.link_data : link.link_id;
         }
     }
     me = get_router_node(router::router_id);
@@ -86,18 +112,39 @@ void RoutingTable::dijkstra() {
         }
     }
     // Fill the next_step map
+    //for (auto& pair : distances) {
+    //    Node* node = pair.first;
+    //    if (node == me || previous.find(node) == previous.end()) {
+    //        continue;
+    //    }
+//
+    //    Node* step = node;
+//
+    //    while (previous[step] != me) {
+    //        step = previous[step];
+    //    }
+    //    next_step[node] = step;
+    //}
+    // Fill the next_step map
     for (auto& pair : distances) {
         Node* node = pair.first;
-        if (node == me || previous.find(node) == previous.end()) {
+        if (node == me || previous.find(node) == previous.end() || node->is_router) {
             continue;
         }
-
-        Node* step = node;
-
+        NetNode *target = (NetNode*)node;
+        Node* step = target;
+        RouterNode *next_router_node = NULL;
+        int metric = 0;
         while (previous[step] != me) {
+            metric += previous[step]->neighbor_nodes[step];
             step = previous[step];
+            if (step->is_router) {
+                next_router_node = (RouterNode*)step;
+            }
         }
-        next_step[node] = step;
+        if (next_router_node != NULL) {
+            next_step[target] = next_router_node->neighbor_2_interface[step];
+        }
     }
 }
 
@@ -124,8 +171,7 @@ void RoutingTable::show() {
     for (auto pair : next_step) {
         pair.first->show();
         std::cout<<'\t';
-        pair.second->show();
-        std::cout<<std::endl;
+        std::cout<<inet_ntoa({pair.second})<<std::endl;
     }
     //for (auto pair : net_node_map) {
     //    pair.second->show();
@@ -145,24 +191,24 @@ void RoutingTable::reset() {
     next_step.clear();
 }
 
-Interface* RoutingTable::query(uint32_t daddr) {
-    for (auto pair : next_step) {
-        if (pair.first->is_router) {
-            continue;
-        }
-        NetNode *target = (NetNode*)pair.first;
-        if ((target->id & target->mask) == (daddr & target->mask)) {
-            uint32_t next_addr = pair.second->id;
-            for (Interface *interface : router::interfaces) {
-                if ((interface->ip & interface->network_mask) == (next_addr & interface->network_mask)) {
-                    return interface;
-                }
-            }
-            return NULL;
-        }
-    }
-    return NULL;
-}
+//Interface* RoutingTable::query(uint32_t daddr) {
+//    for (auto pair : next_step) {
+//        if (pair.first->is_router) {
+//            continue;
+//        }
+//        NetNode *target = (NetNode*)pair.first;
+//        if ((target->id & target->mask) == (daddr & target->mask)) {
+//            uint32_t next_addr = pair.second->id;
+//            for (Interface *interface : router::interfaces) {
+//                if ((interface->ip & interface->network_mask) == (next_addr & interface->network_mask)) {
+//                    return interface;
+//                }
+//            }
+//            return NULL;
+//        }
+//    }
+//    return NULL;
+//}
 
 void RoutingTable::add_route(const std::string& target_net, const std::string& target_mask, const std::string& next_net) {
     std::string* command = new std::string("sudo route add -net " + target_net + " netmask " + target_mask + " gw " + next_net);
@@ -187,10 +233,9 @@ void RoutingTable::write_routing() {
             continue;
         }
         NetNode *target = (NetNode*)pair.first;
-        NetNode *next = (NetNode*)pair.second;
         std::string target_network = inet_ntoa({target->id});
         std::string target_mask = inet_ntoa({target->mask});
-        std::string next_step = inet_ntoa({next->id});
+        std::string next_step = inet_ntoa({pair.second});
         add_route(target_network, target_mask, next_step);
     }
 }

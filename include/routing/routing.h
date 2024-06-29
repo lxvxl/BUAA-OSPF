@@ -43,7 +43,7 @@ class RoutingTable {
         std::unordered_map<uint32_t, RouterNode*> router_node_map;
         std::unordered_map<uint32_t, NetNode*> net_node_map;
         RouterNode *me;
-        std::unordered_map<Node*, Node*> next_step;
+        std::unordered_map<Node*, uint32_t> next_step;
 
         RouterNode* get_router_node(uint32_t id);
         NetNode* get_net_node(uint32_t ip, uint32_t mask);
@@ -55,7 +55,7 @@ class RoutingTable {
     public:
         void generate(std::vector<RouterLSA*>& router_lsas, std::vector<NetworkLSA*>& network_lsas);
         void show();
-        Interface* query(uint32_t daddr);//暂时弃用
+        //Interface* query(uint32_t daddr);//暂时弃用
         void write_routing();
 };
 
