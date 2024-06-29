@@ -22,7 +22,7 @@ class Node {
 
 class RouterNode : public Node {
     public:
-        std::unordered_map<Node*, uint16_t> neighbor_2_interface;
+        std::unordered_map<Node*, uint32_t> neighbor_2_interface;
         RouterNode(uint32_t id) : Node(true, id) {};
         void show() override;
         ~RouterNode() override = default;

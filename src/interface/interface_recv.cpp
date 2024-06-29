@@ -330,14 +330,15 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
         //如果该实例比数据库中新或者数据库中不存在实例
         if (r_lsa == NULL || v_lsa->compare(r_lsa) < 0) {
             //如果该实例收到保护
-            if (lsa_db.protected_lsas.find(r_lsa) != lsa_db.protected_lsas.end()) {
-                logger::other_log(interface, "trying to override a protected lsa");
-                continue;
-            }
+            //if (lsa_db.protected_lsas.find(r_lsa) != lsa_db.protected_lsas.end()) {
+            //    logger::other_log(interface, "trying to override a protected lsa");
+            //    continue;
+            //}
             r_lsa = lsa_db.update(v_lsa);
             //查看该实例是否是请求的LSA。如果是，将其删除
             if (daddr == interface->ip && neighbor->rm_from_reqs(v_lsa)) {
                 logger::other_log(interface, "got a quried lsa");
+                //v_lsa->show();
                 continue;
             }
             //否则，泛洪，将其从重传列表中删除

@@ -50,9 +50,11 @@ NetNode* RoutingTable::get_net_node(uint32_t ip, uint32_t mask) {
 
 void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<NetworkLSA*>& network_lsas) {
     reset();
+    //std::cout<<"generating routing table...\n";
     // Process NetworkLSAs
     for (NetworkLSA* network_lsa : network_lsas) {
         net_node_map[network_lsa->header.link_state_id] = new NetNode(network_lsa->header.link_state_id, network_lsa->network_mask);
+        //std::cout<<"netnode "<<inet_ntoa({network_lsa->header.link_state_id})<<std::endl;
     }
     // Process RouterLSAs
     for (RouterLSA* router_lsa : router_lsas) {
@@ -61,10 +63,22 @@ void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<Ne
             RouterLSALink& link = router_lsa->links[i];
             NetNode* net_node;
             if (link.type == TRAN) {
+                if (net_node_map.find(link.link_id) == net_node_map.end()) {
+                    net_node_map[link.link_id] = new NetNode(link.link_id, 0x00ffffff);
+                }
                 net_node = net_node_map[link.link_id];
                 router_node->neighbor_2_interface[net_node] = link.link_data;
             } else if (link.type == STUB) {
-                net_node = new NetNode(link.link_id, link.link_data);
+                std::cout<<"STUB Net"<<std::endl;
+                if (net_node_map.find(link.link_id & link.link_data) == net_node_map.end()) {
+                    net_node = new NetNode(link.link_id, link.link_data);
+                    net_node_map[link.link_id & link.link_data] = net_node;
+                } else {
+                    net_node = net_node_map[link.link_id & link.link_data];
+                }
+            } else if (link.type == P2P) {
+                continue;
+                net_node = new NetNode(link.link_data, 0xffffff00);
             }
             net_node->neighbor_nodes[router_node] = 0;
             router_node->neighbor_nodes[net_node] = link.metric;
@@ -75,6 +89,21 @@ void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<Ne
 }
 
 void RoutingTable::dijkstra() {
+    std::cout<<"dijkstra\n"<<std::endl;
+    for (auto pair : net_node_map) {
+        pair.second->show();
+        for (auto n : pair.second->neighbor_nodes) {
+            n.first->show();
+        }
+        std::cout<<std::endl;
+    }
+    for (auto pair : router_node_map) {
+        pair.second->show();
+        for (auto n : pair.second->neighbor_nodes) {
+            n.first->show();
+        }
+        std::cout<<std::endl;
+    }
     std::unordered_map<Node*, uint32_t> distances;
     std::unordered_map<Node*, Node*> previous;
     std::priority_queue<std::pair<uint32_t, Node*>, std::vector<std::pair<uint32_t, Node*>>, std::greater<>> priority_queue;
@@ -211,29 +240,29 @@ void RoutingTable::reset() {
 //}
 
 void RoutingTable::add_route(const std::string& target_net, const std::string& target_mask, const std::string& next_net) {
-    std::string* command = new std::string("sudo route add -net " + target_net + " netmask " + target_mask + " gw " + next_net);
-    int result = system(command->c_str());
+    std::string command(std::string("sudo route add -net ") + target_net + " netmask " + target_mask + " gw " + next_net);
+    int result = system(command.c_str());
     
     if (result != 0) {
         std::cerr << "Failed to add route. Command: " << command << std::endl;
     } else {
         std::cout << "Route added successfully. Command: " << command << std::endl;
-        written_routes.insert(command);
+        //written_routes.insert(command);
     }
 }
 
 void RoutingTable::write_routing() {
-    for (std::string* route_item : written_routes) {
-        route_item->replace(route_item->find("add"), 3, "del");
-        system(route_item->c_str());
-    }
+    //for (std::string* route_item : written_routes) {
+    //    route_item->replace(route_item->find("add"), 3, "del");
+    //    system(route_item->c_str());
+    //}
     written_routes.clear();
     for (auto pair : next_step) {
         if (pair.first->is_router) {
             continue;
         }
         NetNode *target = (NetNode*)pair.first;
-        std::string target_network = inet_ntoa({target->id});
+        std::string target_network = inet_ntoa({target->id & target->mask});
         std::string target_mask = inet_ntoa({target->mask});
         std::string next_step = inet_ntoa({pair.second});
         add_route(target_network, target_mask, next_step);

@@ -207,6 +207,8 @@ RouterLSA *RouterLSA::generate() {
         router_lsa->links[i] = links[i];
     }
     ((LSAHeader*)router_lsa)->fill(ROUTER, router::router_id, router::lsa_db.get_seq_num(), length);
+    //std::cout<<"generate a router lsa\n";
+    //router_lsa->show();
     return router_lsa;
 }
 

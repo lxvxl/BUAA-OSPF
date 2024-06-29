@@ -22,10 +22,11 @@ Neighbor *Interface::get_neighbor_by_ip(uint32_t ip) {
     return NULL;
 }
 
-Interface::Interface(const char *name, uint32_t ip, uint32_t mask) {
+Interface::Interface(const char *name, uint32_t ip, uint32_t mask, uint16_t metric) {
     this->name         = name;
     this->ip           = ip;
     this->network_mask = mask;
+    this->metric       = metric;
     memset(send_buffer, 0, sizeof(send_buffer));
     memset(recv_buffer, 0, sizeof(recv_buffer));
     router::interfaces.push_back(this);
