@@ -18,7 +18,8 @@ namespace router {
     namespace config {
         extern const uint8_t  options; 
         extern const uint16_t MTU;
-        extern const int      min_ls_arrival;        
+        extern const int      min_ls_arrival;       
+        extern const uint32_t max_age; 
     }
 }
 

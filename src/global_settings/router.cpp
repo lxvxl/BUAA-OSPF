@@ -8,3 +8,4 @@ RoutingTable router::routing_table;
 const uint8_t router::config::options = 0x2;
 const uint16_t router::config::MTU = 1500;
 const int router::config::min_ls_arrival = 1;
+const uint32_t router::config::max_age = 3600;
