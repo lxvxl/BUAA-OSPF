@@ -27,13 +27,13 @@ enum NeighborState {
 };
 
 struct Neighbor {
-    NeighborState   state               = NeighborState::N_DOWN;
+    NeighborState   state            = NeighborState::N_DOWN;
     uint32_t        router_id;
     uint32_t        dr;
     uint32_t        bdr;
     uint8_t         priority;
     uint32_t        ip;
-    uint32_t        inactivity_timer        = -1;
+    uint32_t        inactivity_timer = -1;
     Interface*      interface;
 
     struct DDManager {

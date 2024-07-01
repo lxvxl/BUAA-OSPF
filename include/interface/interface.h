@@ -41,7 +41,7 @@ struct Interface {
     uint32_t    rxmt_interval               = 10;
     uint16_t    metric                      ;
 
-    uint32_t    wait_timer                  = -1;//使接口退出waiting状态的单击计时器
+    uint32_t    wait_timer                  = -1;
     uint32_t    hello_timer                 = -1;
 
     int         send_socket_fd              = 0;
