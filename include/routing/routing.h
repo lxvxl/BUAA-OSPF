@@ -48,7 +48,7 @@ class RoutingTable {
         RouterNode* get_router_node(uint32_t id);
         NetNode* get_net_node(uint32_t ip, uint32_t mask);
         
-        std::set<std::string*> written_routes;
+        std::set<std::string> written_routes;
         void dijkstra();
         void reset();
         void add_route(const std::string& target_net, const std::string& target_mask, const std::string& next_net);

@@ -64,12 +64,11 @@ void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<Ne
             NetNode* net_node;
             if (link.type == TRAN) {
                 if (net_node_map.find(link.link_id) == net_node_map.end()) {
-                    net_node_map[link.link_id] = new NetNode(link.link_id, 0x00ffffff);
+                    continue;
                 }
                 net_node = net_node_map[link.link_id];
                 router_node->neighbor_2_interface[net_node] = link.link_data;
             } else if (link.type == STUB) {
-                std::cout<<"STUB Net"<<std::endl;
                 if (net_node_map.find(link.link_id & link.link_data) == net_node_map.end()) {
                     net_node = new NetNode(link.link_id, link.link_data);
                     net_node_map[link.link_id & link.link_data] = net_node;
@@ -78,7 +77,7 @@ void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<Ne
                 }
             } else if (link.type == P2P) {
                 continue;
-                net_node = new NetNode(link.link_data, 0xffffff00);
+                //net_node = new NetNode(link.link_data, 0xffffff00);
             }
             net_node->neighbor_nodes[router_node] = 0;
             router_node->neighbor_nodes[net_node] = link.metric;
@@ -86,24 +85,24 @@ void RoutingTable::generate(std::vector<RouterLSA*>& router_lsas, std::vector<Ne
     }
     me = get_router_node(router::router_id);
     dijkstra();
+    write_routing();
 }
 
 void RoutingTable::dijkstra() {
-    std::cout<<"dijkstra\n"<<std::endl;
-    for (auto pair : net_node_map) {
-        pair.second->show();
-        for (auto n : pair.second->neighbor_nodes) {
-            n.first->show();
-        }
-        std::cout<<std::endl;
-    }
-    for (auto pair : router_node_map) {
-        pair.second->show();
-        for (auto n : pair.second->neighbor_nodes) {
-            n.first->show();
-        }
-        std::cout<<std::endl;
-    }
+    //for (auto pair : net_node_map) {
+    //    pair.second->show();
+    //    for (auto n : pair.second->neighbor_nodes) {
+    //        n.first->show();
+    //    }
+    //    std::cout<<std::endl;
+    //}
+    //for (auto pair : router_node_map) {
+    //    pair.second->show();
+    //    for (auto n : pair.second->neighbor_nodes) {
+    //        n.first->show();
+    //    }
+    //    std::cout<<std::endl;
+    //}
     std::unordered_map<Node*, uint32_t> distances;
     std::unordered_map<Node*, Node*> previous;
     std::priority_queue<std::pair<uint32_t, Node*>, std::vector<std::pair<uint32_t, Node*>>, std::greater<>> priority_queue;
@@ -140,21 +139,7 @@ void RoutingTable::dijkstra() {
             }
         }
     }
-    // Fill the next_step map
-    //for (auto& pair : distances) {
-    //    Node* node = pair.first;
-    //    if (node == me || previous.find(node) == previous.end()) {
-    //        continue;
-    //    }
-//
-    //    Node* step = node;
-//
-    //    while (previous[step] != me) {
-    //        step = previous[step];
-    //    }
-    //    next_step[node] = step;
-    //}
-    // Fill the next_step map
+
     for (auto& pair : distances) {
         Node* node = pair.first;
         if (node == me || previous.find(node) == previous.end() || node->is_router) {
@@ -172,9 +157,9 @@ void RoutingTable::dijkstra() {
             }
         }
         if (next_router_node != NULL) {
-            target->show();
-            next_router_node->show();
-            std::cout<<std::endl;
+            //target->show();
+            //next_router_node->show();
+            //std::cout<<std::endl;
             next_step[target] = next_router_node->neighbor_2_interface[step];
         }
     }
@@ -205,10 +190,6 @@ void RoutingTable::show() {
         std::cout<<'\t';
         std::cout<<inet_ntoa({pair.second})<<std::endl;
     }
-    //for (auto pair : net_node_map) {
-    //    pair.second->show();
-    //    std::cout<<std::endl;
-    //}
 }
 
 void RoutingTable::reset() {
@@ -223,25 +204,6 @@ void RoutingTable::reset() {
     next_step.clear();
 }
 
-//Interface* RoutingTable::query(uint32_t daddr) {
-//    for (auto pair : next_step) {
-//        if (pair.first->is_router) {
-//            continue;
-//        }
-//        NetNode *target = (NetNode*)pair.first;
-//        if ((target->id & target->mask) == (daddr & target->mask)) {
-//            uint32_t next_addr = pair.second->id;
-//            for (Interface *interface : router::interfaces) {
-//                if ((interface->ip & interface->network_mask) == (next_addr & interface->network_mask)) {
-//                    return interface;
-//                }
-//            }
-//            return NULL;
-//        }
-//    }
-//    return NULL;
-//}
-
 void RoutingTable::add_route(const std::string& target_net, const std::string& target_mask, const std::string& next_net) {
     std::string command(std::string("sudo route add -net ") + target_net + " netmask " + target_mask + " gw " + next_net);
     int result = system(command.c_str());
@@ -250,15 +212,15 @@ void RoutingTable::add_route(const std::string& target_net, const std::string& t
         std::cerr << "Failed to add route. Command: " << command << std::endl;
     } else {
         std::cout << "Route added successfully. Command: " << command << std::endl;
-        //written_routes.insert(command);
+        written_routes.insert(command);
     }
 }
 
 void RoutingTable::write_routing() {
-    //for (std::string* route_item : written_routes) {
-    //    route_item->replace(route_item->find("add"), 3, "del");
-    //    system(route_item->c_str());
-    //}
+    for (std::string route_item : written_routes) {
+        route_item.replace(route_item.find("add"), 3, "del");
+        system(route_item.c_str());
+    }
     written_routes.clear();
     for (auto pair : next_step) {
         if (pair.first->is_router) {

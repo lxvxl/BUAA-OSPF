@@ -25,34 +25,29 @@ enum InterfaceState : int{
     DR
 };
 struct Interface {
-    const char* name;
+    const char* name                        ;
     std::thread recv_thread;
-    std::thread send_thread;
+    std::thread main_thread;
 
     InterfaceState state                    = InterfaceState::DOWN;
     uint8_t     rtr_priority                = 1; 
-    uint32_t    ip                          = inet_addr("192.168.64.20");
-    uint32_t    network_mask                = inet_addr("255.255.255.0");
+    uint32_t    ip                          ;
+    uint32_t    network_mask                ;
     uint32_t    area_id                     = 0;
     uint16_t    hello_interval              = 10;
     uint32_t    dead_interval               = 40;
-    uint32_t    designated_route            = 0; // 这里用的是网络字节序
-    uint32_t    backup_designated_router    = 0;     
     uint32_t    dr                          = inet_addr("0.0.0.0");
     uint32_t    bdr                         = inet_addr("0.0.0.0");
-    uint32_t    interface_output_cost       = 0;
     uint32_t    rxmt_interval               = 10;
-    uint16_t    metric                      = 1;
+    uint16_t    metric                      ;
 
     uint32_t    wait_timer                  = -1;//使接口退出waiting状态的单击计时器
     uint32_t    hello_timer                 = -1;
 
-    int         send_socket_fd;
-    int         recv_socket_fd;
-    int         transmit_socket_fd          = 0;
+    int         send_socket_fd              = 0;
+    int         recv_socket_fd              = 0;
 
     std::vector<Neighbor *> neighbors;
-    std::mutex mtx;
 
     char send_buffer[BUFFER_SIZE];
     char recv_buffer[BUFFER_SIZE];
@@ -69,7 +64,7 @@ struct Interface {
 
     Neighbor*   get_neighbor_by_id(uint32_t router_id);
     Neighbor*   get_neighbor_by_ip(uint32_t ip);
-    void        send_thread_runner();
+    void        main_thread_runner();
 
     void        send_hello_packet();
     void        send_dd_packet(Neighbor *neighbor);
@@ -79,8 +74,6 @@ struct Interface {
     void        send_lsu_packet(LSAHeader *r_lsa, uint32_t dst_addr);
     void        send_lsack_packet(std::vector<LSAHeader*>& v_lsas, uint32_t dst_addr);
     void        send_lsack_packet(LSAHeader *v_lsa, uint32_t dst_addr);
-
-    void        transmit_packet(char buffer[], int length);
 
     void        elect_dr();
     void        recv_thread_runner();

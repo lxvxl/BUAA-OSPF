@@ -25,8 +25,8 @@ void Interface::event_interface_up() {
         this->wait_timer = this->dead_interval;
     }
     
-    this->send_thread = std::thread(std::bind(&Interface::send_thread_runner, this));
-    this->send_thread.detach();
+    this->main_thread = std::thread(std::bind(&Interface::main_thread_runner, this));
+    this->main_thread.detach();
     this->recv_thread = std::thread(std::bind(&Interface::recv_thread_runner, this));
     this->recv_thread.detach();
     event_post_aspect

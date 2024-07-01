@@ -49,23 +49,13 @@ void Interface::recv_thread_runner() {
         if (ipv4_header->version != 4 
         || ipv4_header->protocol != 89 
         || (ipv4_header->daddr != this->ip && ipv4_header->daddr != inet_addr("224.0.0.5") && (ipv4_header->daddr != inet_addr("224.0.0.6")))) {
-            //if (ipv4_header->version == 4 && ipv4_header->protocol == 1) {
-            //    uint32_t daddr = ipv4_header->daddr;
-            //    Interface *target_interface = router::routing_table.query(daddr);
-            //    if (target_interface == NULL) {
-            //        logger::other_log(this, "Unknown address: " + std::string(inet_ntoa({daddr})));
-            //    } else if (target_interface != this && ipv4_header->ttl != 1) {
-            //        logger::other_log(this, "dst address: " + std::string(inet_ntoa({daddr})));
-            //        target_interface->transmit_packet(recv_buffer + sizeof(struct ethhdr), ntohs(ipv4_header->tot_len));
-            //    }
-            //}
             continue;
         }
         if ((ipv4_header->daddr == inet_addr("224.0.0.6")) && (this->state != DR && this->state != BACKUP)) {
             continue;
         }
         if ((ipv4_header->saddr & this->network_mask) != (this->ip & this->network_mask)) {
-            continue;//h不知道s为什么会受到其他网卡的东西
+            continue;//不知道为什么会受到其他网卡的东西
         }
         //logger::other_log(this, "received a packet");
         
@@ -126,8 +116,6 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
         neighbor->event_1way_received();
         return;
     }
-    //std::cout<<"neighbor dr and br"<<inet_ntoa({neighbor->dr});
-    //std::cout<<" "<<inet_ntoa({neighbor->bdr})<<std::endl;
     //如果邻居宣告自己为 DR，且宣告BDR为 0.0.0.0，且接口状态机的状态为 Waiting，执行事件BackupSeen。
     if (neighbor->dr == neighbor->ip 
             && neighbor->bdr == inet_addr("0.0.0.0") 
@@ -153,11 +141,6 @@ void handle_recv_hello(OSPFHello *hello_packet, Interface *interface, uint32_t s
 }
 
 void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
-    //if (ntohs(dd_packet->interface_mtu) > router::config::MTU) {
-    //    return;
-    //}
-    // 在此处理DD报文
-    //dd_packet->show();
     Neighbor *neighbor = interface->get_neighbor_by_id(dd_packet->header.router_id);
     if (neighbor == NULL) {
         return;
@@ -227,7 +210,6 @@ void handle_recv_dd(OSPFDD *dd_packet, Interface *interface) {
             }
             memcpy(last_dd, dd_packet, 2048);
             //检查dd序号
-
             if (neighbor->dd_manager.seq_number != packet_dd_seq_num ) {
                 logger::event_log(interface, "received unmatched sequence number in DD packet");
                 neighbor->event_seq_num_mismatch();
@@ -387,10 +369,6 @@ void handle_recv_lsu(OSPFLSU *lsu_packet, Interface *interface, uint32_t saddr, 
             interface->send_lsack_packet(v_lsa, daddr);
         } else { //数据库中存在更新的实例或者相同的实例
             if (neighbor->lsr_manager.rm_lsa(v_lsa)) { //如果这个实例正在请求列表中，生成BadLSReq事件
-                // std::cout<<"querying lsa:\n";
-                // v_lsa->show();
-                // std::cout<<"but we have lsa:\n";
-                // r_lsa->show();
                 if (v_lsa->compare(r_lsa) == 0) {
                     interface->send_lsack_packet(v_lsa, daddr);
                     continue;
